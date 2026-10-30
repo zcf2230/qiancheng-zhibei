@@ -29,14 +29,44 @@
   /* ---------------- 光标 / 导航 / 揭示 / 倾斜 ---------------- */
   function initCursor() {
     if (isTouch || reduceMotion) return;
+    var q = (location.search.match(/[?&]cursor=([a-z]+)/) || [])[1];
+    if (q) { try { localStorage.setItem('hub_cursor_v1', q); } catch (e) {} }
+    var mode = q || localStorage.getItem('hub_cursor_v1') || 'comet';
+    if (['needle', 'comet', 'lens', 'minimal'].indexOf(mode) < 0) mode = 'needle';
+    document.documentElement.setAttribute('data-cursor', mode);
+    if (mode !== 'minimal') document.documentElement.classList.add('custom-cursor');
     var dot = document.getElementById('cursorDot');
     var ring = document.getElementById('cursorRing');
     if (!dot || !ring) return;
-    var tx = 0, ty = 0, rx = 0, ry = 0;
-    window.addEventListener('pointermove', function (e) { tx = e.clientX; ty = e.clientY; dot.style.transform = 'translate(' + tx + 'px,' + ty + 'px) translate(-50%,-50%)'; }, { passive: true });
+    var needle = document.createElement('span');
+    needle.className = 'cursor-needle';
+    ring.appendChild(needle);
+    var trail = document.createElement('div');
+    trail.className = 'cursor-trail';
+    var dots = [];
+    for (var i = 0; i < 7; i++) {
+      var s = document.createElement('i');
+      trail.appendChild(s);
+      dots.push({ el: s, x: -100, y: -100, k: 0.34 - i * 0.04 });
+    }
+    document.body.appendChild(trail);
+    var tx = window.innerWidth / 2, ty = window.innerHeight / 2, rx = tx, ry = ty, angle = 0, lx = tx, ly = ty;
+    window.addEventListener('pointermove', function (e) {
+      tx = e.clientX; ty = e.clientY;
+      var dx = tx - lx, dy = ty - ly;
+      if (dx * dx + dy * dy > 4) { angle = Math.atan2(dy, dx) * 180 / Math.PI + 90; lx = tx; ly = ty; }
+    }, { passive: true });
     (function loop() {
-      rx += (tx - rx) * 0.16; ry += (ty - ry) * 0.16;
-      ring.style.transform = 'translate(' + rx + 'px,' + ry + 'px) translate(-50%,-50%)';
+      rx += (tx - rx) * 0.2; ry += (ty - ry) * 0.2;
+      ring.style.transform = 'translate(' + rx + 'px,' + ry + 'px) translate(-50%,-50%) rotate(' + angle.toFixed(1) + 'deg)';
+      dot.style.transform = 'translate(' + tx + 'px,' + ty + 'px) translate(-50%,-50%)';
+      var px = tx, py = ty;
+      for (var j = 0; j < dots.length; j++) {
+        var d = dots[j];
+        d.x += (px - d.x) * d.k; d.y += (py - d.y) * d.k;
+        d.el.style.transform = 'translate(' + d.x + 'px,' + d.y + 'px) translate(-50%,-50%)';
+        px = d.x; py = d.y;
+      }
       requestAnimationFrame(loop);
     })();
     var hoverSel = 'a, button, input, select, textarea, .q-opt, .chip, .tl-row, .action, .bento-card';
