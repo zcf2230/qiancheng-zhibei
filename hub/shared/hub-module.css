@@ -1,0 +1,71 @@
+/* 三岔路聚合站：模块视觉统一层。在各模块自身样式之后加载。
+   三个模块的 CSS 变量名各不相同，这里一次性全部覆盖；某模块用不到的变量自然惰性。 */
+:root {
+  --hub-font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+
+  /* kaoyan / intern 变量名 */
+  --bg: transparent;
+  --card: #ffffff;
+  --surface-2: #fafbfc;
+  --surface-3: #f2f4f6;
+  --line: #e5e6eb;
+  --line-2: #eef0f2;
+  --line-strong: #cdd2d9;
+  --text: #1f2329;
+  --text-2: #33383e;
+  --muted: #646a73;
+  --ink: #1f2329;
+  --ink-2: #4b5563;
+  --ink-3: #8a9199;
+  --gray-soft: #f2f4f6;
+  --blue: #176b75;
+  --blue-soft: #e9f1f1;
+
+  /* gongkao 变量名：荧光绿系统一到青绿 */
+  --paper: transparent;
+  --surface: #ffffff;
+  --lime: #176b75;
+  --lime-soft: #e9f1f1;
+  --forest: #ffffff;
+  --accent-on-lime: #ffffff;
+  --primary-hover: #145f68;
+}
+
+html[data-theme="dark"] {
+  --bg: transparent;
+  --paper: transparent;
+  --card: #222527;
+  --surface: #222527;
+  --surface-2: #2a2d2f;
+  --surface-3: #303335;
+  --line: #33383a;
+  --line-2: #292d2f;
+  --line-strong: #4a5054;
+  --text: #e7e4df;
+  --text-2: #cfd3d6;
+  --muted: #9aa1a6;
+  --ink: #e7e4df;
+  --ink-2: #a9afb2;
+  --ink-3: #7e8589;
+  --gray-soft: #2a2e30;
+  --blue: #4aa8b2;
+  --blue-soft: rgba(74, 168, 178, .14);
+  --lime: #4aa8b2;
+  --lime-soft: rgba(74, 168, 178, .14);
+  --forest: #10262a;
+  --accent-on-lime: #10262a;
+  --primary-hover: #5bbcc6;
+}
+
+body {
+  font-family: var(--hub-font-stack);
+  background: transparent;
+}
+
+/* 圆角统一 */
+.card, .modal, .filter-card, .table-card { border-radius: 10px; }
+button, .btn, input, select, textarea { border-radius: 8px; }
+
+/* gongkao 图表条硬编码了橄榄绿渐变，统一到青绿 */
+.chart-bar { background: linear-gradient(90deg, #176b75, #2fa0ac); }
+html[data-theme="dark"] .chart-bar { background: linear-gradient(90deg, #2b6067, #4aa8b2); }

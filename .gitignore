@@ -1,0 +1,6 @@
+contest/shots/.edge/
+*.qoder.site
+node_modules/
+tmp/
+.DS_Store
+Thumbs.db
