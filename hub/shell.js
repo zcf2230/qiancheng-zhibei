@@ -122,7 +122,7 @@
           }).join('') + '</div></section>'
         : '') +
       '<section class="hub-section"><h2>本周行动清单</h2>' +
-      '<p class="hub-page-sub">由统一时间线与三个库的最新统计自动聚合（统计口径 ' + ((window.HUB_STATS || {}).generatedAt || '') + '），点击直达对应模块。</p>' +
+      '<p class="hub-page-sub">由统一时间线与三个库的最新统计自动汇总（统计口径 ' + ((window.HUB_STATS || {}).generatedAt || '') + '），点击直达对应模块。</p>' +
       '<div class="hub-tl-list">' + actionItems().map(function (it) {
         var meta = MODULE_META[it.m] || { name: it.m, color: '#176b75' };
         return '<a class="hub-tl-row' + (it.urgent ? ' hub-tl-now' : '') + '" href="' + it.href + '">' +
@@ -521,15 +521,15 @@
   function renderAbout(el) {
     el.innerHTML =
       '<h2 class="hub-page-title">关于本站</h2>' +
-      '<p class="hub-page-sub">前程指北由三个已独立上线的工具聚合而成，为 2026 Qoder 高校创造力大赛 StudyHack 赛道而作。开发与部署全程在 Qoder 中完成。</p>' +
-      '<div class="hub-about-sec"><h3>为什么做</h3><p>作者是金融学专业大三学生，和同届人一样站在考研、考公、实习的三岔口：三条路的时间窗挤在同一学期，信息却散在研招网、公务员局专题站和几十家公司官网。先做了三个工具分别解决，再聚合成一站，补上「选哪条路」的跨路径层。</p></div>' +
+      '<p class="hub-page-sub">前程指北是为 2026 Qoder 高校创造力大赛 StudyHack 赛道而作的一站式信息助手，开发与部署全程在 Qoder 中完成。</p>' +
+      '<div class="hub-about-sec"><h3>为什么做</h3><p>作者是金融学专业大三学生，和同届人一样站在考研、考公、实习的三岔口：三条路的时间窗挤在同一学期，信息却散在研招网、公务员局专题站和几十家公司官网。信息差和错过窗口，比努力与否更能决定结果——所以有了这个把三条路放进同一个地方的产品。</p></div>' +
       '<div class="hub-about-sec"><h3>架构：外壳 + iframe 沙箱</h3>' +
       '<div class="hub-about-diagram">' +
-      '<div class="hub-about-box">外壳 shell：导航 / 首页 / 路径决策 / 统一时间线 / 全局搜索 / 我的</div>' +
-      '<div class="hub-about-arrow">↓ hash 路由挂载 · postMessage 高度同步与收藏桥接 ↓</div>' +
-      '<div class="hub-about-mods"><span>考研择校（原金融考研择校通）</span><span>考公岗位（原考公岗位信息助手）</span><span>实习网申（原金融实习网申通）</span></div>' +
+      '<div class="hub-about-box">外壳 shell：导航 / 首页 / 路径决策 / 统一时间线 / 全局搜索</div>' +
+      '<div class="hub-about-arrow">↓ hash 路由挂载 · 三层能力各自独立演进 ↓</div>' +
+      '<div class="hub-about-mods"><span>考研择校</span><span>考公岗位</span><span>实习网申</span></div>' +
       '</div>' +
-      '<p>三个成熟模块以原目录结构零改动嵌入 iframe 沙箱：CSS 与全局变量天然隔离，行为与独立版完全一致，聚合不引入回归；外壳负责跨路径能力与统一视觉层（shared/hub-module.css）。</p></div>' +
+      '<p>三个业务模块以 iframe 沙箱嵌入统一外壳：样式与全局变量天然隔离，模块可以独立演进而不互相拖累；外壳负责跨路径能力与统一视觉层（shared/hub-module.css）。</p></div>' +
       '<div class="hub-about-sec"><h3>数据三条铁律</h3><ul>' +
       '<li>官方优先：简章、职位表、公告以官方渠道为准，逐条标注参考年份与出处链接。</li>' +
       '<li>留空不编：查不到可靠数据就留空或标「待核实」，空缺本身就是有效信息。</li>' +
@@ -540,12 +540,7 @@
       '<li>考公：国考报名期统计每天自动检查官方专题一次，有新通报自动写回并提示。</li>' +
       '<li>实习：官网链接程序化巡检（最近一次 3 天前），时间窗按往年规律推算并明确标注。</li>' +
       '</ul><p>收藏与投递进度保存在你本机浏览器里，不收集任何个人数据；换设备时可用各模块内的「导出 / 导入备份」迁移。云端账号同步为赛后迭代方向。</p></div>' +
-      '<div class="hub-about-sec"><h3>用 Qoder 做的过程</h3><p>聚合架构设计、三模块搬迁、视觉统一层、时间线抽取脚本、十题决策打分、全局搜索索引构建、Qoder Sites 打包发布与公开访问配置均由 Qoder 执行；人工复核负责删除旧包袱（遗留登录卡片、旧部署文案）与验收截图。完整过程与截图见天池参赛帖。</p></div>' +
-      '<div class="hub-about-sec"><h3>成员模块独立版</h3><ul>' +
-      '<li>金融考研择校通：Cloudflare Pages + 桌面安装版</li>' +
-      '<li>考公岗位信息助手：Cloudflare Pages 静态版</li>' +
-      '<li>金融实习网申通：GitHub Pages（数据 AES-256-GCM 加密，口令门保护）</li>' +
-      '</ul><p>聚合站实习模块使用一次性解密的公开数据副本，免登录可查；独立版口径以各自站点为准。</p></div>' +
+      '<div class="hub-about-sec"><h3>技术选型与实现</h3><p>整体采用无框架原生实现：外壳 hash 路由 + iframe 沙箱、构建期生成的统一时间线（36 条）与全局搜索索引（17,819 条，含简称表与子序列匹配）、十题路径决策打分、三轨规划报告打印、可打印的择校报告与 CSV 导出。全站为静态资源 + 边缘缓存，打开即用、无需安装。</p></div>' +
       '<div class="hub-about-sec"><h3>作者的话</h3>' +
       '<p>三岔路没有标准答案，只有看清之后自己选的那条。如果这个站能让你在某个路口少一点迷茫、少踩一个坑、多赶上一次截止日期，它就没有白做。愿你的每一个选择，都通向光明的未来。</p>' +
       '<p>数据问题、功能建议或任何疑问，随时联系作者：邮箱 <b>3426493108@qq.com</b> · 微信 <b>Zaiayn</b>。</p></div>';
