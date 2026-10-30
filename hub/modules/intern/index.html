@@ -190,5 +190,18 @@ try {
 
 <script src="js/data.plain.js"></script>
 <script src="js/app.js?v=18"></script>
+<script>
+/* 前程指北 · 指针光晕 */
+(function () {
+  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var g = document.createElement('div');
+  g.style.cssText = 'position:fixed;left:0;top:0;width:560px;height:560px;margin:-280px 0 0 -280px;border-radius:50%;pointer-events:none;z-index:1;background:radial-gradient(circle,rgba(23,107,117,.10),rgba(23,107,117,0) 62%);transition:opacity .4s;opacity:0';
+  document.body.appendChild(g);
+  var tx = 0, ty = 0, rx = 0, ry = 0, on = false;
+  window.addEventListener('pointermove', function (e) { tx = e.clientX; ty = e.clientY; if (!on) { on = true; g.style.opacity = '1'; } }, { passive: true });
+  document.addEventListener('mouseleave', function () { on = false; g.style.opacity = '0'; });
+  (function loop() { rx += (tx - rx) * .12; ry += (ty - ry) * .12; g.style.transform = 'translate(' + rx + 'px,' + ry + 'px)'; requestAnimationFrame(loop); })();
+})();
+</script>
 </body>
 </html>

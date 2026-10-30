@@ -4,3 +4,11 @@ node_modules/
 tmp/
 .DS_Store
 Thumbs.db
+
+contest/redesign/.cdp/
+contest/redesign/.edge/
+contest/redesign/.edge2/
+
+contest/shots/.edge2/
+contest/**/.cdp/
+contest/**/.edge*/
