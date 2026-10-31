@@ -961,31 +961,18 @@ body[data-route="about"] .page-head .page-title::after {
 @media (prefers-reduced-motion: reduce) { .meteor-layer { display: none; } }
 .no-anim .meteor-layer { display: none !important; }
 
-/* 翻书转场：整块主内容绕左侧书脊 3D 翻转，换页在接近侧边时发生 */
-.hub-main { position: relative; transform-style: preserve-3d; background: var(--paper); }
-.hub-main.flipping { box-shadow: 26px 0 60px rgba(11, 20, 19, .22); }
-.hub-main.flipping::after {
-  content: ""; position: absolute; inset: 0; z-index: 6; pointer-events: none;
-  background:
-    linear-gradient(90deg, rgba(0, 0, 0, .30) 0%, rgba(0, 0, 0, .06) 9%, rgba(255, 255, 255, .10) 42%, rgba(0, 0, 0, .12) 78%, rgba(0, 0, 0, .26) 100%);
-}
-.hub-main.flipping::before {
-  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; z-index: 7; pointer-events: none;
-  background: linear-gradient(180deg, rgba(217, 179, 108, 0), rgba(217, 179, 108, .55), rgba(217, 179, 108, 0));
-}
-#flipShade {
-  position: fixed; inset: 0; z-index: 9997; pointer-events: none; opacity: 0;
-  background: radial-gradient(120% 120% at 80% 84%, rgba(0, 0, 0, .30), rgba(0, 0, 0, .04) 55%, transparent 72%);
-}
+.hub-main { position: relative; }
 
 /* 掀角翻页：一张带折痕与投影的纸从右下角斜扫到左上角，盖住时换页 */
+/* 翻页层默认不可见（收起且不计入遮挡检测），仅在 .peeling 时显示 */
 #peel {
-  position: fixed; inset: 0; z-index: 9996; pointer-events: none;
+  position: fixed; inset: 0; z-index: 9996; pointer-events: none; visibility: hidden;
   clip-path: polygon(100% 100%, 100% 100%, 100% 100%, 100% 100%);
   background: var(--peel-bg, linear-gradient(135deg, #FFFDF7 0%, #EFDFBE 100%));
   filter: drop-shadow(-18px 18px 30px rgba(11, 20, 19, .30));
   will-change: clip-path, background;
 }
+body.peeling #peel { visibility: visible; }
 #peel::before {
   content: ""; position: absolute; inset: 0;
   background: linear-gradient(135deg, transparent 0 58%, rgba(169, 118, 47, .16) 70%, rgba(255, 255, 255, .55) 75%, rgba(11, 20, 19, .12) 82%, transparent 92%);
