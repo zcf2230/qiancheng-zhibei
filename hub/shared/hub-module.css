@@ -547,3 +547,16 @@ html[data-theme="dark"][data-module="gongkao"] .chart-bar.hot { background: var(
   [data-module="kaoyan"] .kv, [data-module="gongkao"] .detail-grid { grid-template-columns: 1fr; gap: 4px 0; }
   [data-module="kaoyan"] .kv .k, [data-module="gongkao"] .detail-grid .k { margin-top: 8px; }
 }
+
+/* ==========================================================================
+   性能：模块内关掉常驻光效；长列表只渲染可视区（与实习同一策略）
+   ========================================================================== */
+[data-module] body::before { animation: none; }
+[data-module] body::after { display: none; }
+[data-module] .site-header::before { animation: none; }
+[data-module] .company-card.status-open,
+[data-module] .tl-item.next { animation: none; }
+[data-module="kaoyan"] .school { content-visibility: auto; contain-intrinsic-size: auto 168px; }
+[data-module="kaoyan"] .school.nofin { contain-intrinsic-size: auto 120px; }
+@media (max-width: 900px) { [data-module="kaoyan"] .school { contain-intrinsic-size: auto 230px; } }
+[data-module="gongkao"] .pos-table tbody tr { content-visibility: auto; contain-intrinsic-size: auto 42px; }
