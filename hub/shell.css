@@ -991,6 +991,25 @@ body.peeling #peel { visibility: visible; }
 .no-anim #peel { display: none !important; }
 @media (prefers-reduced-motion: reduce) { #peel { display: none; } }
 
+/* 模块全屏键 + 沉浸模式 */
+.fs-btn {
+  flex: none; height: 28px; padding: 0 12px; border-radius: 999px;
+  border: 1px solid var(--line-strong); background: transparent; color: var(--text-2);
+  font-family: inherit; font-size: 12px; letter-spacing: .02em; cursor: pointer;
+  transition: background .2s, color .2s, border-color .2s;
+}
+.fs-btn:hover { border-color: var(--teal); color: var(--teal); }
+.fs-btn[aria-pressed="true"] { background: var(--teal); border-color: var(--teal); color: #fff; }
+.module-bar .fs-btn { margin-left: auto; }
+.module-bar .back { margin-left: 12px; }
+body.immersive .hub-header, body.immersive .hub-footer, body.immersive .hub-tabbar { display: none !important; }
+body.immersive .hub-main { max-width: none; padding: 0; }
+body.immersive .frame-wrap { position: fixed; inset: 0; z-index: 300; display: flex; flex-direction: column; background: var(--paper-2); }
+body.immersive .module-bar { margin: 0; height: 44px; flex: none; border-radius: 0; border-left: 0; border-right: 0; border-top: 0; }
+body.immersive .hub-frame { flex: 1; width: 100%; height: auto; min-height: 0; border-radius: 0; box-shadow: none; }
+body.immersive .frame-skel { inset: 44px 0 0 0; border-radius: 0; }
+@media (max-width: 980px) { .fs-btn { display: none; } }
+
 /* 月历矩阵：整月一行、三轨一列；条目为完整文字，不按时长压宽，永不截断 */
 .mx { border-top: 1px solid var(--line-strong); }
 .mx-row { display: grid; grid-template-columns: 84px repeat(3, 1fr); border-bottom: 1px solid var(--line); }

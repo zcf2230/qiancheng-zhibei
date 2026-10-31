@@ -980,6 +980,7 @@
     else if (name === 'gongkao') stat = '16,543 个岗位 · 快照 ' + (st.gkSnapshot || st.generatedAt || '');
     else if (name === 'intern') stat = (st.internOpen || 0) + ' 家开放中' + (st.internClosing7 ? ' · 本周截止 ' + st.internClosing7 + ' 家' : '');
     return '<div class="module-bar"><button class="menu-btn" type="button" aria-label="打开导航菜单">☰</button><span class="dot"></span><b>' + meta.name + '</b><span class="stat">' + esc(stat) + '</span>' +
+      '<button class="fs-btn" type="button" aria-pressed="false">全屏</button>' +
       '<a class="back" href="#/home">返回首页</a></div>';
   }
 
@@ -1014,7 +1015,20 @@
     });
     var menu = wrap.querySelector('.menu-btn');
     if (menu) menu.addEventListener('click', openDrawer);
+    var fsBtn = wrap.querySelector('.fs-btn');
+    if (fsBtn) fsBtn.addEventListener('click', toggleImmersive);
   }
+
+  /* 模块沉浸模式：iframe 铺满窗口，顶部条保留退出键；Esc 也可退出 */
+  function setImmersive(on) {
+    document.body.classList.toggle('immersive', on);
+    document.querySelectorAll('.fs-btn').forEach(function (b) {
+      b.textContent = on ? '退出全屏' : '全屏';
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    if (on && frame) { try { frame.focus(); } catch (e) {} }
+  }
+  function toggleImmersive() { setImmersive(!document.body.classList.contains('immersive')); }
 
   /* ---------------- 抽屉 / 主题控件 / 跨 iframe 消息 ---------------- */
   var drawer = document.getElementById('hubDrawer');
@@ -1096,6 +1110,7 @@
     flushRouteCleanups();
     endMotion();
     cursorBridge.active = false;
+    document.body.classList.remove('immersive');
     closeDrawer(true);
     var raw = (location.hash || '#/home').replace(/^#\/?/, '');
     var name = raw.split('?')[0] || 'home';
@@ -1193,7 +1208,11 @@
         if (t) setShellTheme(t.dataset.t, true);
       });
     }
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeDrawer(false); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape') return;
+      if (document.body.classList.contains('immersive')) { setImmersive(false); return; }
+      closeDrawer(false);
+    });
     if (window.matchMedia) {
       var mq = matchMedia('(prefers-color-scheme: dark)');
       var onSys = function () { if (themePref() === 'auto') applyShellTheme('auto', true); };
