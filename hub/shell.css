@@ -50,9 +50,8 @@ body {
   position: fixed; inset: -50%;
   width: 200%; height: 200%;
   pointer-events: none; z-index: 3;
-  opacity: .5; mix-blend-mode: soft-light;
+  opacity: .42; mix-blend-mode: soft-light;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
-  animation: grain 8s steps(6) infinite;
 }
 @keyframes grain {
   0%, 100% { transform: translate(0, 0); }
@@ -98,7 +97,7 @@ body.touch .cursor-dot, body.touch .cursor-ring { display: none; }
   background: rgba(255, 254, 250, .78);
   border: 1px solid rgba(255, 255, 255, .55);
   box-shadow: 0 12px 40px rgba(11, 20, 19, .08);
-  backdrop-filter: blur(18px) saturate(1.2);
+  backdrop-filter: blur(10px) saturate(1.1);
   transition: top .3s var(--ease), box-shadow .3s, background .3s, padding .3s;
 }
 .hub-header.scrolled { background: rgba(255, 254, 250, .92); box-shadow: 0 8px 30px rgba(11, 20, 19, .12); top: 10px; }
@@ -173,12 +172,15 @@ body[data-route="home"] .hub-main { padding-top: 0; }
 }
 .hero-aurora { position: absolute; inset: 0; pointer-events: none; }
 .hero-aurora i {
-  position: absolute; border-radius: 50%; filter: blur(90px); opacity: .55;
+  position: absolute; border-radius: 50%; opacity: .8;
   animation: aurora 18s ease-in-out infinite alternate;
+  will-change: transform;
+  transform: translateZ(0);
 }
-.hero-aurora i:nth-child(1) { width: 520px; height: 520px; left: -6%; top: -12%; background: rgba(23, 107, 117, .55); }
-.hero-aurora i:nth-child(2) { width: 420px; height: 420px; right: -8%; top: 6%; background: rgba(55, 194, 180, .3); animation-delay: -6s; }
-.hero-aurora i:nth-child(3) { width: 640px; height: 360px; left: 28%; bottom: -22%; background: rgba(46, 154, 163, .28); animation-delay: -12s; }
+/* 用径向渐变模拟柔光，去掉 blur(90px) 滤镜——这是高分屏滚动卡顿的主要来源之一 */
+.hero-aurora i:nth-child(1) { width: 760px; height: 760px; left: -14%; top: -24%; background: radial-gradient(circle, rgba(23, 107, 117, .55) 0%, rgba(23, 107, 117, .20) 42%, rgba(23, 107, 117, 0) 72%); }
+.hero-aurora i:nth-child(2) { width: 620px; height: 620px; right: -16%; top: -2%; background: radial-gradient(circle, rgba(55, 194, 180, .32) 0%, rgba(55, 194, 180, .10) 45%, rgba(55, 194, 180, 0) 74%); animation-delay: -6s; }
+.hero-aurora i:nth-child(3) { width: 900px; height: 520px; left: 18%; bottom: -34%; background: radial-gradient(ellipse, rgba(46, 154, 163, .30) 0%, rgba(46, 154, 163, .10) 48%, rgba(46, 154, 163, 0) 76%); animation-delay: -12s; }
 @keyframes aurora {
   0% { transform: translate3d(0, 0, 0) scale(1); }
   50% { transform: translate3d(4%, 6%, 0) scale(1.08); }
@@ -332,9 +334,10 @@ body[data-route="home"] .hub-main { padding-top: 0; }
 .module-bar {
   display: flex; align-items: center; gap: 14px;
   height: 38px; padding: 0 16px; margin-bottom: 12px;
-  background: rgba(255, 254, 250, .72); border: 1px solid var(--line);
+  background: rgba(255, 254, 250, .96);
+  border: 1px solid var(--line);
   color: var(--text); border-radius: 999px;
-  font-size: 12.5px; backdrop-filter: blur(14px);
+  font-size: 12.5px;
 }
 .module-bar .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--teal-bright); box-shadow: 0 0 10px var(--glow); }
 .module-bar b { font-weight: 600; letter-spacing: .04em; }
@@ -344,7 +347,7 @@ body[data-route="home"] .hub-main { padding-top: 0; }
 .hub-frame { width: 100%; border: 0; display: block; height: clamp(560px, calc(100svh - 180px), 920px); min-height: 560px; border-radius: var(--radius-lg); background: var(--paper-2); box-shadow: 0 24px 60px rgba(11, 20, 19, .12); }
 
 /* ============================ 路径决策 ============================ */
-.progress { position: sticky; top: 92px; z-index: 20; display: flex; align-items: center; gap: 14px; padding: 10px 16px; margin-bottom: 22px; background: rgba(255, 254, 250, .85); border: 1px solid var(--line); border-radius: 999px; backdrop-filter: blur(14px); }
+.progress { position: sticky; top: 92px; z-index: 20; display: flex; align-items: center; gap: 14px; padding: 10px 16px; margin-bottom: 22px; background: rgba(255, 254, 250, .96); border: 1px solid var(--line); border-radius: 999px; }
 .progress-track { flex: 1; height: 4px; border-radius: 4px; background: rgba(11, 20, 19, .08); overflow: hidden; }
 .progress-fill { height: 100%; width: 0; border-radius: 4px; background: linear-gradient(90deg, var(--teal), var(--teal-bright)); transition: width .4s var(--ease); }
 .progress-count { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -602,7 +605,7 @@ html.custom-cursor :focus-visible { outline: 2px solid var(--teal-2); outline-of
   .hub-tabbar {
     display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 120;
     background: var(--paper-2);
-    background: color-mix(in srgb, var(--paper-2) 88%, transparent); backdrop-filter: blur(14px);
+    background: color-mix(in srgb, var(--paper-2) 96%, transparent);
     border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom);
   }
   .hub-tabbar a, .hub-tabbar button {
@@ -1009,6 +1012,18 @@ body.immersive .module-bar { margin: 0; height: 44px; flex: none; border-radius:
 body.immersive .hub-frame { flex: 1; width: 100%; height: auto; min-height: 0; border-radius: 0; box-shadow: none; }
 body.immersive .frame-skel { inset: 44px 0 0 0; border-radius: 0; }
 @media (max-width: 980px) { .fs-btn { display: none; } }
+/* 移动端放弃毛玻璃，换近实色，减少滚动重绘 */
+@media (max-width: 980px) {
+  .hub-header { backdrop-filter: none; background: rgba(255, 254, 250, .97); }
+  html[data-theme="dark"] .hub-header { background: rgba(22, 33, 30, .97); }
+}
+
+/* ==========================================================================
+   性能：高 DPI 屏上去掉全屏颗粒混合层；给常驻动画提升为合成层
+   ========================================================================== */
+@media (min-resolution: 1.5dppx) { .grain { display: none; } }
+body::after { will-change: transform; }
+.hero-lights i { will-change: transform, opacity; }
 
 /* 月历矩阵：整月一行、三轨一列；条目为完整文字，不按时长压宽，永不截断 */
 .mx { border-top: 1px solid var(--line-strong); }

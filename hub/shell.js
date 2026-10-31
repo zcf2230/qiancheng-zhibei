@@ -268,7 +268,7 @@
     var mqHtml = mq.concat(mq).map(function (x) { return '<span><b>' + esc(x[0]) + '</b>' + esc(x[1]) + '</span>'; }).join('');
     el.innerHTML =
       '<section class="hero">' +
-        '<div class="hero-aurora"><i></i><i></i><i></i></div><div class="hero-lights">' + lights(16) + '</div>' +
+        '<div class="hero-aurora"><i></i><i></i><i></i></div><div class="hero-lights">' + lights(10) + '</div>' +
         '<svg class="hero-compass" viewBox="0 0 200 200" fill="none" aria-hidden="true">' +
           '<circle cx="100" cy="100" r="92" stroke="rgba(242,239,230,.25)" stroke-width="1"/>' +
           '<circle cx="100" cy="100" r="64" stroke="rgba(242,239,230,.14)" stroke-width="1"/>' +
@@ -300,7 +300,7 @@
             return '<a class="fp-rest-row" href="' + it.href + '"><span class="action-tag">' + esc((MODULE_META[it.m] || {}).name || it.m) + '</span><span>' + esc(it.txt) + '</span><em>' + esc(it.meta) + '</em></a>';
           }).join('') + '</div>' : '') +
         '</article>' +
-        '<figure class="fp-photo" data-ui><img src="assets/ui/ui-kaoyan.png" alt="考研择校模块真实界面：院校列表、筛选与冲稳保分档" width="800" height="520"><figcaption>考研择校 · 院校列表与分档（站内真实界面）</figcaption></figure>' +
+        '<figure class="fp-photo" data-ui><img src="assets/ui/ui-kaoyan.png" alt="考研择校模块真实界面：院校列表、筛选与冲稳保分档" width="800" height="520" loading="eager" decoding="async"><figcaption>考研择校 · 院校列表与分档（站内真实界面）</figcaption></figure>' +
         '<aside class="fp-rail">' +
           '<div class="fp-stat"><b data-n="211">0</b><span>所金融考研院校</span></div>' +
           '<div class="fp-stat"><b data-n="16543">0</b><span>个考公岗位</span></div>' +
@@ -322,11 +322,11 @@
           '<tr><th scope="row">成本与回报</th><td>学费+机会成本 → 学历平台</td><td>笔试+面试 → 稳定编制</td><td>无额外成本 → 薪资与留用</td></tr>' +
           '<tr><th scope="row">结果确定性</th><td>较低（复试线波动）</td><td>中（数据透明）</td><td>较高（多保底）</td></tr>' +
         '</tbody></table>' +
-        '<figure class="cmp-photo" data-ui><img src="assets/ui/ui-gongkao.png" alt="考公岗位模块真实界面：岗位表、竞争比与筛选" width="800" height="520" loading="lazy"><figcaption>考公岗位 · 竞争比可测算（站内真实界面）</figcaption></figure>' +
+        '<figure class="cmp-photo" data-ui><img src="assets/ui/ui-gongkao.png" alt="考公岗位模块真实界面：岗位表、竞争比与筛选" width="800" height="520" loading="lazy" decoding="async"><figcaption>考公岗位 · 竞争比可测算（站内真实界面）</figcaption></figure>' +
       '</div></section>' +
 
       '<section class="section intern-band reveal"><div class="ib-grid">' +
-        '<figure class="ib-photo" data-ui><img src="assets/ui/ui-intern.png" alt="实习网申模块真实界面：报头数据速览、批次筛选与公司库" width="800" height="520" loading="lazy"><figcaption>实习网申 · 批次与倒计时（站内真实界面）</figcaption></figure>' +
+        '<figure class="ib-photo" data-ui><img src="assets/ui/ui-intern.png" alt="实习网申模块真实界面：报头数据速览、批次筛选与公司库" width="800" height="520" loading="lazy" decoding="async"><figcaption>实习网申 · 批次与倒计时（站内真实界面）</figcaption></figure>' +
         '<div class="ib-copy"><div class="section-kicker">Intern</div><h2>截止日期撞在一起时，先投哪家比投得多更重要</h2>' +
         '<p>' + esc(String(st.internOpen || 0)) + ' 家机构正在开放网申，' + esc(String(st.internClosing7 || 0)) + ' 家本周截止。按倒计时排好投递顺序，把最想去的放在最前面。</p>' +
         '<a class="btn btn-ghost magnet" href="#/intern">进入实习网申<span class="arr">→</span></a></div>' +
@@ -334,7 +334,7 @@
 
       '<section class="section reveal"><div class="section-head"><div><div class="section-kicker">How</div><h2>三步用起来</h2></div></div>' +
       '<div class="how-grid">' +
-        '<figure class="how-photo" data-ui><img src="assets/ui/ui-search.png" alt="全局搜索真实界面：一个搜索框同时命中院校、岗位与机构" width="800" height="520" loading="lazy"><figcaption>全局搜索 · 17,819 条索引一个框命中（站内真实界面）</figcaption></figure>' +
+        '<figure class="how-photo" data-ui><img src="assets/ui/ui-search.png" alt="全局搜索真实界面：一个搜索框同时命中院校、岗位与机构" width="800" height="520" loading="lazy" decoding="async"><figcaption>全局搜索 · 17,819 条索引一个框命中（站内真实界面）</figcaption></figure>' +
         '<ol class="how-steps">' +
           '<li><b>答十题</b><p>路径决策十题给出主推荐、维度理由与备选，结果可分享、可打印。</p></li>' +
           '<li><b>看窗口</b><p>统一时间线把三条路的关键节点对齐，确认本周该动手的事与剩余天数。</p></li>' +
