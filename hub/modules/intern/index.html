@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-module="intern">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,9 +8,9 @@
 <meta name="description" content="各大券商、基金、银行、四大、咨询、大厂寒假与暑期实习招聘网申时间、用人要求、笔试提醒一站式查询">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>">
 <script>
-/* 在样式表生效前把主题定好，避免深色用户看到一闪而过的白屏（FOUC） */
+/* 在样式表生效前把主题定好，避免深色用户看到一闪而过的白屏（FOUC）；优先外壳传入的 hubtheme */
 try {
-  var __t = localStorage.getItem("itr_theme") || "light";
+  var __t = (location.search.match(/[?&]hubtheme=(light|dark|auto)/) || [])[1] || localStorage.getItem("itr_theme") || "light";
   if (__t === "auto") __t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   if (__t !== "light" && __t !== "dark") __t = "light";
   document.documentElement.dataset.theme = __t;
@@ -19,7 +19,9 @@ try {
   document.title = "金融实习网申通 · 2027 " + (__s === "summer" ? "暑假实习" : "寒假实习");
 } catch (e) {}
 </script>
-<link rel="stylesheet" href="css/style.css?v=14">
+<link rel="stylesheet" href="../../vendor/fonts/noto-serif-sc/600.css">
+<link rel="stylesheet" href="../../vendor/fonts/noto-serif-sc/700.css">
+<link rel="stylesheet" href="css/style.css?v=15">
 <link rel="stylesheet" href="../../shared/hub-module.css">
 </head>
 <body>
@@ -52,11 +54,11 @@ try {
 </header>
 
 <nav class="tabs container">
-  <button class="tab active" data-tab="list">📋 公司库</button>
-  <button class="tab" data-tab="timeline">🗓 时间轴</button>
-  <button class="tab" data-tab="progress">✅ 投递进度</button>
-  <button class="tab" data-tab="channels">📨 渠道与内推</button>
-  <button class="tab" data-tab="guides">📝 笔面试攻略</button>
+  <button class="tab active" data-tab="list">公司库</button>
+  <button class="tab" data-tab="timeline">时间轴</button>
+  <button class="tab" data-tab="progress">投递进度</button>
+  <button class="tab" data-tab="channels">渠道与内推</button>
+  <button class="tab" data-tab="guides">笔面试攻略</button>
 </nav>
 
 <!-- ===================== 公司库 ===================== -->
@@ -189,19 +191,7 @@ try {
 </div>
 
 <script src="js/data.plain.js"></script>
-<script src="js/app.js?v=18"></script>
-<script>
-/* 前程指北 · 指针光晕 */
-(function () {
-  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  var g = document.createElement('div');
-  g.style.cssText = 'position:fixed;left:0;top:0;width:560px;height:560px;margin:-280px 0 0 -280px;border-radius:50%;pointer-events:none;z-index:1;background:radial-gradient(circle,rgba(23,107,117,.10),rgba(23,107,117,0) 62%);transition:opacity .4s;opacity:0';
-  document.body.appendChild(g);
-  var tx = 0, ty = 0, rx = 0, ry = 0, on = false;
-  window.addEventListener('pointermove', function (e) { tx = e.clientX; ty = e.clientY; if (!on) { on = true; g.style.opacity = '1'; } }, { passive: true });
-  document.addEventListener('mouseleave', function () { on = false; g.style.opacity = '0'; });
-  (function loop() { rx += (tx - rx) * .12; ry += (ty - ry) * .12; g.style.transform = 'translate(' + rx + 'px,' + ry + 'px)'; requestAnimationFrame(loop); })();
-})();
-</script>
+<script src="js/app.js?v=19"></script>
+<script src="../../shared/hub-bridge.js"></script>
 </body>
 </html>

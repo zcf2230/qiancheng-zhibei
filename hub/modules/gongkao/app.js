@@ -1285,6 +1285,11 @@ function bindEvents() {
       document.documentElement.dataset.theme = eff;
       try { localStorage.setItem('gk_theme', t); } catch (e) { /* 忽略 */ }
       themeSeg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
+      try { if (window.parent !== window) window.parent.postMessage({ type: 'hub-theme-changed', theme: t }, location.origin); } catch (e) {}
+    };
+    window.HubTheme = {
+      get: () => { try { return localStorage.getItem('gk_theme') || 'light'; } catch (e) { return 'light'; } },
+      set: applyTheme
     };
     applyTheme((() => { try { return localStorage.getItem('gk_theme') || 'light'; } catch (e) { return 'light'; } })());
     themeSeg.addEventListener('click', e => {

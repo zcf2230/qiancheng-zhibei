@@ -25,7 +25,9 @@ function applyTheme() {
 function setTheme(pref) {
   try { localStorage.setItem(THEME_KEY, pref); } catch (e) {}
   applyTheme();
+  try { if (window.parent !== window) window.parent.postMessage({ type: 'hub-theme-changed', theme: pref }, location.origin); } catch (e) {}
 }
+window.HubTheme = { get: themePref, set: setTheme };
 function renderThemeSeg() {
   const pref = themePref();
   document.querySelectorAll('#themeSeg [data-t]').forEach(b =>
@@ -972,6 +974,8 @@ async function init() {
   };
 
   renderResults(); updateStat();
+  /* 通知外壳：首屏数据已渲染完，可以撤掉骨架 */
+  try { if (window.parent !== window) window.parent.postMessage({ type: 'hub-module-ready', module: 'kaoyan' }, location.origin); } catch (e) {}
 }
 
 init();

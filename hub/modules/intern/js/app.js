@@ -51,7 +51,9 @@
   function setTheme(t) {
     try { localStorage.setItem(THEME_KEY, t); } catch (e) {}
     applyTheme();
+    try { if (window.parent !== window) window.parent.postMessage({ type: 'hub-theme-changed', theme: t }, location.origin); } catch (e) {}
   }
+  window.HubTheme = { get: savedTheme, set: setTheme };
   // 脚本在 body 末尾执行，报头已存在：立即应用并绑定开关
   applyTheme();
   (function () {

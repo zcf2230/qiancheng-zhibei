@@ -1,16 +1,19 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-module="gongkao">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>考公岗位信息助手</title>
   <script>
-    // 主题在 CSS 之前设置，避免深色用户启动时闪白
+    // 主题在 CSS 之前设置，避免深色用户启动时闪白；优先外壳传入的 hubtheme
     try {
-      var t = localStorage.getItem('gk_theme') || 'light';
+      var t = (location.search.match(/[?&]hubtheme=(light|dark|auto)/) || [])[1] || localStorage.getItem('gk_theme') || 'light';
       var sys = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
       document.documentElement.dataset.theme = (t === 'auto') ? sys : t;
     } catch (e) {}
   </script>
+  <link rel="stylesheet" href="../../vendor/fonts/noto-serif-sc/600.css">
+  <link rel="stylesheet" href="../../vendor/fonts/noto-serif-sc/700.css">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="../../shared/hub-module.css">
 </head>
@@ -29,7 +32,7 @@
     <div class="brand">
       <span class="logo">公</span>
       <div>
-        <div class="brand-name">考公岗位助手</div>
+        <h1 class="brand-name">考公岗位助手</h1>
         <div class="brand-sub">FINANCE · CIVIL SERVICE</div>
       </div>
     </div>
@@ -440,18 +443,6 @@
 </script>
 <script src="lib/xlsx.full.min.js"></script>
 <script src="app.js"></script>
-<script>
-/* 前程指北 · 指针光晕 */
-(function () {
-  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  var g = document.createElement('div');
-  g.style.cssText = 'position:fixed;left:0;top:0;width:560px;height:560px;margin:-280px 0 0 -280px;border-radius:50%;pointer-events:none;z-index:1;background:radial-gradient(circle,rgba(23,107,117,.10),rgba(23,107,117,0) 62%);transition:opacity .4s;opacity:0';
-  document.body.appendChild(g);
-  var tx = 0, ty = 0, rx = 0, ry = 0, on = false;
-  window.addEventListener('pointermove', function (e) { tx = e.clientX; ty = e.clientY; if (!on) { on = true; g.style.opacity = '1'; } }, { passive: true });
-  document.addEventListener('mouseleave', function () { on = false; g.style.opacity = '0'; });
-  (function loop() { rx += (tx - rx) * .12; ry += (ty - ry) * .12; g.style.transform = 'translate(' + rx + 'px,' + ry + 'px)'; requestAnimationFrame(loop); })();
-})();
-</script>
+<script src="../../shared/hub-bridge.js"></script>
 </body>
 </html>

@@ -7,11 +7,33 @@
 <meta name="description" content="前程指北：金融类大学生的考研择校、考公岗位、实习网申一站式信息助手。统一时间线对齐三条路的关键节点，路径决策十题给出推荐。">
 <meta name="theme-color" content="#0B1413">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%230B1413'/><text x='32' y='44' text-anchor='middle' font-size='34' fill='%2337C2B4'>北</text></svg>">
-<link rel="stylesheet" href="shared/tokens.css">
+<script>
+/* 主题 boot：首绘前定浅/深，避免闪白；hub_theme_v1 = light | dark | auto */
+(function () {
+  var p = (location.search.match(/[?&]theme=(light|dark|auto)/) || [])[1] || null;
+  try { p = p || localStorage.getItem('hub_theme_v1') || 'auto'; } catch (e) { p = p || 'auto'; }
+  var d = p === 'dark' || (p === 'auto' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.setAttribute('data-theme', d ? 'dark' : 'light');
+  document.documentElement.style.colorScheme = d ? 'dark' : 'light';
+})();
+</script>
+<link rel="stylesheet" href="vendor/fonts/noto-serif-sc/600.css">
+<link rel="stylesheet" href="vendor/fonts/noto-serif-sc/700.css">
+<!-- 考研模块体积最大、切页最容易顿：空闲预取，避免转场时才解析 -->
+<link rel="prefetch" href="modules/kaoyan/renderer/index.html">
+<link rel="prefetch" href="modules/kaoyan/renderer/app.js" as="script">
+<link rel="prefetch" href="modules/kaoyan/renderer/styles.css" as="style">
+<link rel="prefetch" href="modules/kaoyan/data/batch1.json">
+<link rel="prefetch" href="modules/kaoyan/data/batch2.json">
+<link rel="prefetch" href="modules/kaoyan/data/batch3.json">
+<link rel="prefetch" href="modules/kaoyan/data/batch4.json">
 <link rel="stylesheet" href="shell.css">
 </head>
 <body>
+<a class="skip-link" href="#module-root">跳到主要内容</a>
 <div class="curtain" id="curtain" aria-hidden="true"></div>
+<div id="peel" aria-hidden="true"></div>
+<div id="flipShade" aria-hidden="true"></div>
 <div class="cursor-dot" id="cursorDot" aria-hidden="true"></div>
 <div class="cursor-ring" id="cursorRing" aria-hidden="true"></div>
 <div class="grain" aria-hidden="true"></div>
@@ -22,7 +44,7 @@
       <span class="hub-brand-mark">北</span>
       <span class="hub-brand-text">前程指北<em>考研 · 考公 · 实习</em></span>
     </a>
-    <nav class="hub-nav">
+    <nav class="hub-nav" aria-label="主导航">
       <a data-route="home" href="#/home">首页</a>
       <a data-route="path" href="#/path">路径决策</a>
       <a data-route="timeline" href="#/timeline">统一时间线</a>
@@ -32,6 +54,7 @@
       <a data-route="search" href="#/search">搜索</a>
       <a data-route="about" href="#/about">关于本站</a>
     </nav>
+    <button class="hub-theme-btn" id="hubThemeBtn" type="button" aria-label="切换浅色 / 深色 / 跟随系统" title="切换主题">◐</button>
     <a class="hub-nav-cta" href="#/path">开始决策<span aria-hidden="true">→</span></a>
   </div>
 </header>
@@ -49,9 +72,41 @@
   </div>
 </footer>
 
+<nav class="hub-tabbar" aria-label="移动端导航">
+  <a data-route="home" href="#/home">首页</a>
+  <a data-route="path" href="#/path">决策</a>
+  <a data-route="timeline" href="#/timeline">时间线</a>
+  <a data-route="search" href="#/search">搜索</a>
+  <button type="button" id="tabMore" aria-haspopup="true" aria-expanded="false">模块</button>
+</nav>
+
+<div class="hub-drawer" id="hubDrawer" role="dialog" aria-modal="true" aria-label="导航菜单" hidden>
+  <div class="hub-drawer-head">
+    <b>前程指北</b>
+    <button type="button" id="drawerClose" aria-label="关闭菜单">✕</button>
+  </div>
+  <nav class="hub-drawer-nav" aria-label="全部页面">
+    <a data-route="home" href="#/home">首页</a>
+    <a data-route="path" href="#/path">路径决策</a>
+    <a data-route="timeline" href="#/timeline">统一时间线</a>
+    <a data-route="search" href="#/search">全局搜索</a>
+    <a data-route="kaoyan" href="#/kaoyan">考研择校</a>
+    <a data-route="gongkao" href="#/gongkao">考公岗位</a>
+    <a data-route="intern" href="#/intern">实习网申</a>
+    <a data-route="about" href="#/about">关于本站</a>
+  </nav>
+  <div class="hub-drawer-theme" role="group" aria-label="主题">
+    <button type="button" data-t="light">浅色</button>
+    <button type="button" data-t="dark">深色</button>
+    <button type="button" data-t="auto">跟随系统</button>
+  </div>
+</div>
+
 <script src="shared/timeline-data.js"></script>
 <script src="shared/hub-stats.js"></script>
-<script src="shared/search-index.js"></script>
-<script src="shell.js"></script>
+<!-- GSAP 3.15.0 本地 vendor（含 ScrollTrigger），不依赖运行时 CDN；?motion=legacy 可回滚手写实现 -->
+<script defer src="vendor/gsap.min.js"></script>
+<script defer src="vendor/ScrollTrigger.min.js"></script>
+<script defer src="shell.js"></script>
 </body>
 </html>

@@ -1,10 +1,22 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-module="kaoyan">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>
+/* 防 FOUC：优先外壳传入的 hubtheme，其次本机偏好，最后系统；须在首绘前写 data-theme */
+(function () {
+  var p = (location.search.match(/[?&]hubtheme=(light|dark|auto)/) || [])[1];
+  try { p = p || localStorage.getItem('kaoyan-theme') || 'auto'; } catch (e) { p = p || 'auto'; }
+  var d = p === 'dark' || (p === 'auto' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.setAttribute('data-theme', d ? 'dark' : 'light');
+})();
+</script>
 <title>金融考研择校通 · 金融学硕/专硕择校参考</title>
 <meta name="description" content="全国 31 省市 211 所院校的金融学硕（0202）与金融专硕（0251）考研数据：复试线、录取人数、学费、学制、初试科目、参考书目。数据整理自研招网与各校研究生院官网，标注参考年份与出处，仅供参考。">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%230f525a'/><stop offset='55%25' stop-color='%23176b75'/><stop offset='100%25' stop-color='%232fa0ac'/></linearGradient></defs><rect width='64' height='64' rx='14' fill='url(%23g)'/><text x='32' y='46' text-anchor='middle' font-size='38' fill='%23fff' font-family='Microsoft YaHei,sans-serif'>%E7%A0%94</text></svg>">
+<link rel="stylesheet" href="../../../vendor/fonts/noto-serif-sc/600.css">
+<link rel="stylesheet" href="../../../vendor/fonts/noto-serif-sc/700.css">
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="../../../shared/hub-module.css">
 </head>
@@ -13,7 +25,7 @@
   <aside id="sidebar">
     <div class="logo">
       <div class="logo-icon">研</div>
-      <div><div class="logo-title">金融考研择校通</div><div class="logo-sub">2027 择校数据台</div></div>
+      <div><h1 class="logo-title">金融考研择校通</h1><div class="logo-sub">2027 择校数据台</div></div>
     </div>
     <nav>
       <div class="side-group">数据</div>
@@ -216,18 +228,6 @@
 <div id="toast" style="display:none"></div>
 <div id="report"></div>
 <script src="app.js"></script>
-<script>
-/* 前程指北 · 指针光晕 */
-(function () {
-  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  var g = document.createElement('div');
-  g.style.cssText = 'position:fixed;left:0;top:0;width:560px;height:560px;margin:-280px 0 0 -280px;border-radius:50%;pointer-events:none;z-index:1;background:radial-gradient(circle,rgba(23,107,117,.10),rgba(23,107,117,0) 62%);transition:opacity .4s;opacity:0';
-  document.body.appendChild(g);
-  var tx = 0, ty = 0, rx = 0, ry = 0, on = false;
-  window.addEventListener('pointermove', function (e) { tx = e.clientX; ty = e.clientY; if (!on) { on = true; g.style.opacity = '1'; } }, { passive: true });
-  document.addEventListener('mouseleave', function () { on = false; g.style.opacity = '0'; });
-  (function loop() { rx += (tx - rx) * .12; ry += (ty - ry) * .12; g.style.transform = 'translate(' + rx + 'px,' + ry + 'px)'; requestAnimationFrame(loop); })();
-})();
-</script>
+<script src="../../../shared/hub-bridge.js"></script>
 </body>
 </html>

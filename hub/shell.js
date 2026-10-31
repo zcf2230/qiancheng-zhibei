@@ -19,6 +19,71 @@
   if (shotMode) document.documentElement.classList.add('no-anim');
   if (isTouch) document.body.classList.add('touch');
 
+  /* ---------------- 主题（外壳浅/深/随系统 + iframe 桥） ---------------- */
+  var THEME_KEY = 'hub_theme_v1';
+  var themeOverride = (location.search.match(/[?&]theme=(light|dark|auto)/) || [])[1] || null;
+  function themePref() {
+    if (themeOverride) return themeOverride;
+    try { return localStorage.getItem(THEME_KEY) || 'auto'; } catch (e) { return 'auto'; }
+  }
+  function themeResolved(p) {
+    return (p === 'dark' || (p === 'auto' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches)) ? 'dark' : 'light';
+  }
+  var applyingFromModule = false;
+  function applyShellTheme(p, broadcast) {
+    var eff = themeResolved(p);
+    document.documentElement.setAttribute('data-theme', eff);
+    document.documentElement.style.colorScheme = eff;
+    document.querySelectorAll('.hub-drawer-theme [data-t]').forEach(function (b) { b.classList.toggle('on', b.dataset.t === p); });
+    var btn = document.getElementById('hubThemeBtn');
+    if (btn) btn.textContent = p === 'auto' ? '◐' : (eff === 'dark' ? '●' : '○');
+    if (broadcast && frame && frame.contentWindow) {
+      try { frame.contentWindow.postMessage({ type: 'hub-theme', theme: p }, location.origin); } catch (e) {}
+    }
+  }
+  function setShellTheme(p, broadcast) {
+    themeOverride = null;
+    try { localStorage.setItem(THEME_KEY, p); } catch (e) {}
+    applyShellTheme(p, broadcast !== false);
+  }
+
+  /* ---------------- 光标桥状态 / 路由清理 ---------------- */
+  var cursorBridge = { active: false, x: 0, y: 0 };
+  var cursorEnabled = false;
+  var routeCleanups = [];
+  function onRouteCleanup(fn) { routeCleanups.push(fn); }
+  function flushRouteCleanups() {
+    while (routeCleanups.length) { try { routeCleanups.pop()(); } catch (e) {} }
+  }
+
+  /* ---------------- 动效系统（GSAP 3.15.0 本地 vendor；?motion=legacy 回滚） ----------------
+   * 分级：L1 微交互 .16 / L2 入场 .45 / L3 叙事 reveal .7；只动 transform/opacity/CSS 变量。
+   * 每个路由一个 gsap.context，render 时 revert，避免旧 tween 操作已卸载 DOM。 */
+  var legacyMotion = /[?&]motion=legacy/.test(location.search);
+  var motionEnabled = false;
+  var motionCtx = null;
+  var MOTION = { micro: .16, enter: .45, reveal: .7, stagger: .06, easeOut: 'power3.out', easeInOut: 'power3.inOut' };
+  /* 翻页纸的取色：用「要翻到的那一页」的主色调，而不是固定淡黄 */
+  var PEEL_THEME = {
+    home: { bg: 'linear-gradient(135deg, #0B1413 0%, #14312E 100%)', ink: true },
+    path: { bg: 'linear-gradient(135deg, #FCF3DD 0%, #EAD6AD 100%)', ink: false },
+    timeline: { bg: 'linear-gradient(135deg, #14312E 0%, #0A1513 100%)', ink: true },
+    search: { bg: 'linear-gradient(135deg, #10333A 0%, #0A1513 68%, #2A2114 100%)', ink: true },
+    about: { bg: 'linear-gradient(135deg, #22463E 0%, #10231F 100%)', ink: true },
+    kaoyan: { bg: 'linear-gradient(135deg, #E9F6F3 0%, #CFE7E2 100%)', ink: false },
+    gongkao: { bg: 'linear-gradient(135deg, #FBF1D8 0%, #EFDAAE 100%)', ink: false },
+    intern: { bg: 'linear-gradient(135deg, #E6F5E5 0%, #D6EFD9 100%)', ink: false }
+  };
+  function motionOn() { return motionEnabled && !reduceMotion && !shotMode; }
+  function beginMotion(el, setup) {
+    if (!motionOn() || !window.gsap) return;
+    if (!motionCtx) motionCtx = gsap.context(function () {}, el);
+    motionCtx.add(setup);
+  }
+  function endMotion() {
+    if (motionCtx) { try { motionCtx.revert(); } catch (e) {} motionCtx = null; }
+  }
+
   function rootEl() { return document.getElementById('module-root'); }
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -35,6 +100,7 @@
     if (['needle', 'comet', 'lens', 'minimal'].indexOf(mode) < 0) mode = 'needle';
     document.documentElement.setAttribute('data-cursor', mode);
     if (mode !== 'minimal') document.documentElement.classList.add('custom-cursor');
+    cursorEnabled = (mode !== 'minimal');
     var dot = document.getElementById('cursorDot');
     var ring = document.getElementById('cursorRing');
     if (!dot || !ring) return;
@@ -52,11 +118,13 @@
     document.body.appendChild(trail);
     var tx = window.innerWidth / 2, ty = window.innerHeight / 2, rx = tx, ry = ty, angle = 0, lx = tx, ly = ty;
     window.addEventListener('pointermove', function (e) {
+      cursorBridge.active = false;
       tx = e.clientX; ty = e.clientY;
       var dx = tx - lx, dy = ty - ly;
       if (dx * dx + dy * dy > 4) { angle = Math.atan2(dy, dx) * 180 / Math.PI + 90; lx = tx; ly = ty; }
     }, { passive: true });
     (function loop() {
+      if (cursorBridge.active) { tx = cursorBridge.x; ty = cursorBridge.y; }
       rx += (tx - rx) * 0.2; ry += (ty - ry) * 0.2;
       ring.style.transform = 'translate(' + rx + 'px,' + ry + 'px) translate(-50%,-50%) rotate(' + angle.toFixed(1) + 'deg)';
       dot.style.transform = 'translate(' + tx + 'px,' + ty + 'px) translate(-50%,-50%)';
@@ -117,6 +185,11 @@
       b.textContent = fmt(target);
       setTimeout(function () { b.textContent = fmt(target); }, 1600);
       if (shotMode || reduceMotion || document.visibilityState !== 'visible') return;
+      if (motionOn()) {
+        var obj = { v: 0 };
+        gsap.to(obj, { v: target, duration: 1.2, ease: 'power3.out', snap: { v: 1 }, onUpdate: function () { b.textContent = fmt(Math.round(obj.v)); } });
+        return;
+      }
       var t0 = null;
       function step(ts) {
         if (!t0) t0 = ts;
@@ -186,14 +259,11 @@
     return items.slice(0, 6);
   }
 
-  var STORY = [
-    { m: 'kaoyan', k: '第一轨道', t: '考研', d: '一次押注，换更高的平台。简章、学费学制、初试科目、复试线，逐条标年份和出处——不用在几十个网页之间来回对照。', stats: [['211', '所院校覆盖'], ['8', '个关键节点']], go: '进入考研择校' },
-    { m: 'gongkao', k: '第二轨道', t: '考公', d: '国考与三省选调、省考岗位全库，竞争比和进面分公开可算。先把门槛卡死，再谈分数——别在资格不符的岗位上浪费一年。', stats: [['16,543', '个岗位'], ['5', '类考试']], go: '进入考公岗位' },
-    { m: 'intern', k: '第三轨道', t: '实习', d: '1,064 家机构的网申批次与倒计时，投递进度板上墙。截止日期密的时候，顺序比努力更重要。', stats: [['254', '家开放中'], ['1,064', '家收录']], go: '进入实习网申' }
-  ];
-
   function renderHome(el) {
     var st = window.HUB_STATS || {};
+    var acts = actionItems();
+    var lead = acts[0] || { m: 'path', txt: '答十道路径决策题，先看清再选', meta: '10 题', href: '#/path', urgent: false };
+    var rest = acts.slice(1);
     var mq = marqueeItems();
     var mqHtml = mq.concat(mq).map(function (x) { return '<span><b>' + esc(x[0]) + '</b>' + esc(x[1]) + '</span>'; }).join('');
     el.innerHTML =
@@ -209,7 +279,8 @@
         '<div class="hero-inner">' +
           '<div class="hero-eyebrow">2026 Qoder 高校创造力大赛 · StudyHack</div>' +
           '<h1 id="heroTitle">前程指北</h1>' +
-          '<p class="hero-lead">考研、考公、实习——三条路的时间窗挤在同一个学期。把择校简章、岗位竞争度、网申时间线放进同一个地方，先看清，再选择。</p>' +
+          '<p class="hero-what">考研 · 考公 · 实习，一站式信息助手</p>' +
+          '<p class="hero-lead">三条路的时间窗挤在同一个学期。把择校简章、岗位竞争度、网申时间线放进同一个地方，先看清，再选择。</p>' +
           '<div class="hero-cta">' +
             '<a class="btn btn-primary magnet" href="#/path">开始路径决策<span class="arr">→</span></a>' +
             '<a class="btn btn-ghost magnet" href="#/timeline">查看统一时间线<span class="arr">→</span></a>' +
@@ -219,43 +290,56 @@
         '<div class="hero-scroll">SCROLL</div>' +
       '</section>' +
 
-      '<section class="section reveal"><div class="bento">' +
-        '<div class="bento-card"><u>考研</u><b data-n="211">0</b><span>所金融考研院校</span></div>' +
-        '<div class="bento-card"><u>考公</u><b data-n="16543">0</b><span>个岗位（截至 2026-10-28）</span></div>' +
-        '<div class="bento-card"><u>实习</u><b data-n="1064">0</b><span>家机构收录</span></div>' +
-        '<div class="bento-card"><u>时间线</u><b data-n="36">0</b><span>个关键节点</span></div>' +
+      '<section class="section frontpage fp-cover reveal"><div class="fp-grid">' +
+        '<article class="fp-lead">' +
+          '<div class="fp-kicker">本周头版 · ' + esc(st.generatedAt || '') + '</div>' +
+          '<h2>' + esc(lead.txt) + '</h2>' +
+          '<p class="fp-meta"><span class="action-tag">' + esc((MODULE_META[lead.m] || {}).name || lead.m) + '</span>' + esc(lead.meta) + '</p>' +
+          '<a class="btn btn-primary magnet" href="' + lead.href + '">去处理<span class="arr">→</span></a>' +
+          (rest.length ? '<div class="fp-rest">' + rest.map(function (it) {
+            return '<a class="fp-rest-row" href="' + it.href + '"><span class="action-tag">' + esc((MODULE_META[it.m] || {}).name || it.m) + '</span><span>' + esc(it.txt) + '</span><em>' + esc(it.meta) + '</em></a>';
+          }).join('') + '</div>' : '') +
+        '</article>' +
+        '<figure class="fp-photo" data-ui><img src="assets/ui/ui-kaoyan.png" alt="考研择校模块真实界面：院校列表、筛选与冲稳保分档" width="800" height="520"><figcaption>考研择校 · 院校列表与分档（站内真实界面）</figcaption></figure>' +
+        '<aside class="fp-rail">' +
+          '<div class="fp-stat"><b data-n="211">0</b><span>所金融考研院校</span></div>' +
+          '<div class="fp-stat"><b data-n="16543">0</b><span>个考公岗位</span></div>' +
+          '<div class="fp-stat"><b data-n="1064">0</b><span>家实习机构</span></div>' +
+          '<div class="fp-stat"><b data-n="36">0</b><span>个时间线节点</span></div>' +
+        '</aside>' +
       '</div></section>' +
 
-      '<section class="section reveal"><div class="section-head"><div><div class="section-kicker">Now</div><h2>本周行动清单</h2></div>' +
-      '<p class="section-sub">由统一时间线与三个库的最新统计自动汇总（口径 ' + esc(st.generatedAt || '') + '），紧急项优先。</p></div>' +
-      '<div class="actions">' + actionItems().map(function (it) {
-        var meta = MODULE_META[it.m] || { name: it.m };
-        return '<a class="action' + (it.urgent ? ' urgent' : '') + '" href="' + it.href + '">' +
-          '<span class="action-tag">' + esc(meta.name) + '</span>' +
-          '<span class="action-text">' + esc(it.txt) + '</span>' +
-          '<span class="action-meta">' + esc(it.meta) + '</span></a>';
-      }).join('') + '</div></section>' +
+      '<section class="section cmp-band reveal"><div class="section-head"><div><div class="section-kicker">Compare</div><h2>三条路，一张表看清</h2></div>' +
+      '<p class="section-sub">同一学期里三条轨各自要付出什么、换回什么；「当前窗口」来自统一时间线，随日期自动更新。</p></div>' +
+      '<div class="cmp-grid">' +
+        '<table class="cmp-table"><thead><tr><th scope="col">维度</th><th scope="col">考研</th><th scope="col">考公</th><th scope="col">实习</th></tr></thead><tbody>' +
+          '<tr><th scope="row">当前窗口</th>' + ['kaoyan', 'gongkao', 'intern'].map(function (m) {
+            var cur = (window.HUB_TIMELINE || []).filter(function (t) { var n = new Date(); return t.module === m && t.start && t.end && n >= new Date(t.start + 'T00:00:00') && n <= new Date(t.end + 'T23:59:59'); })[0];
+            return '<td>' + (cur ? esc(cur.stage) + ' · 剩 ' + Math.ceil((new Date(cur.end + 'T23:59:59') - new Date()) / 86400000) + ' 天' : '暂无进行中的窗口') + '</td>';
+          }).join('') + '</tr>' +
+          '<tr><th scope="row">典型准备周期</th><td>10–12 个月，可脱产</td><td>3–6 个月，可兼顾</td><td>边做边投，滚动窗口</td></tr>' +
+          '<tr><th scope="row">竞争形态</th><td>一次初试+复试，线波动</td><td>岗位公开，竞争比可测算</td><td>多线并行，offer 比较</td></tr>' +
+          '<tr><th scope="row">成本与回报</th><td>学费+机会成本 → 学历平台</td><td>笔试+面试 → 稳定编制</td><td>无额外成本 → 薪资与留用</td></tr>' +
+          '<tr><th scope="row">结果确定性</th><td>较低（复试线波动）</td><td>中（数据透明）</td><td>较高（多保底）</td></tr>' +
+        '</tbody></table>' +
+        '<figure class="cmp-photo" data-ui><img src="assets/ui/ui-gongkao.png" alt="考公岗位模块真实界面：岗位表、竞争比与筛选" width="800" height="520" loading="lazy"><figcaption>考公岗位 · 竞争比可测算（站内真实界面）</figcaption></figure>' +
+      '</div></section>' +
 
-      '<section class="story" id="storySec">' +
-        '<div class="story-pin"><div class="story-bg"><div class="hero-lights">' + lights(9) + '</div></div>' +
-          '<div class="story-inner">' +
-            '<div class="story-index"><span class="big" id="storyNum">01</span><div class="dots" id="storyDots"><i class="on"></i><i></i><i></i></div></div>' +
-            '<div class="story-panels" id="storyPanels">' +
-              STORY.map(function (s) {
-                return '<article class="story-panel' + (s === STORY[0] ? ' on' : '') + '"><div class="k">' + s.k + '</div><h3>' + s.t + '</h3><p>' + s.d + '</p>' +
-                  '<div class="stat">' + s.stats.map(function (x) { return '<div><b>' + x[0] + '</b><span>' + x[1] + '</span></div>'; }).join('') + '</div>' +
-                  '<a class="go" href="#/' + s.m + '">' + s.go + ' →</a></article>';
-              }).join('') +
-            '</div>' +
-          '</div>' +
-        '</div>' +
-      '</section>' +
+      '<section class="section intern-band reveal"><div class="ib-grid">' +
+        '<figure class="ib-photo" data-ui><img src="assets/ui/ui-intern.png" alt="实习网申模块真实界面：报头数据速览、批次筛选与公司库" width="800" height="520" loading="lazy"><figcaption>实习网申 · 批次与倒计时（站内真实界面）</figcaption></figure>' +
+        '<div class="ib-copy"><div class="section-kicker">Intern</div><h2>截止日期撞在一起时，先投哪家比投得多更重要</h2>' +
+        '<p>' + esc(String(st.internOpen || 0)) + ' 家机构正在开放网申，' + esc(String(st.internClosing7 || 0)) + ' 家本周截止。按倒计时排好投递顺序，把最想去的放在最前面。</p>' +
+        '<a class="btn btn-ghost magnet" href="#/intern">进入实习网申<span class="arr">→</span></a></div>' +
+      '</div></section>' +
 
       '<section class="section reveal"><div class="section-head"><div><div class="section-kicker">How</div><h2>三步用起来</h2></div></div>' +
-      '<div class="steps">' +
-        '<div class="step reveal d1"><b>01</b><p>答十道路径决策题，拿到主推荐、维度理由与备选。</p></div>' +
-        '<div class="step reveal d2"><b>02</b><p>看统一时间线，确认本周窗口和剩余天数。</p></div>' +
-        '<div class="step reveal d3"><b>03</b><p>进对应模块深查：择校分档、筛岗看竞争比、按倒计时排投递。</p></div>' +
+      '<div class="how-grid">' +
+        '<figure class="how-photo" data-ui><img src="assets/ui/ui-search.png" alt="全局搜索真实界面：一个搜索框同时命中院校、岗位与机构" width="800" height="520" loading="lazy"><figcaption>全局搜索 · 17,819 条索引一个框命中（站内真实界面）</figcaption></figure>' +
+        '<ol class="how-steps">' +
+          '<li><b>答十题</b><p>路径决策十题给出主推荐、维度理由与备选，结果可分享、可打印。</p></li>' +
+          '<li><b>看窗口</b><p>统一时间线把三条路的关键节点对齐，确认本周该动手的事与剩余天数。</p></li>' +
+          '<li><b>进模块深查</b><p>择校分档、筛岗看竞争比、按倒计时排投递；收藏与进度只留在本机。</p></li>' +
+        '</ol>' +
       '</div></section>' +
 
       '<section class="section reveal"><div class="editorial">' +
@@ -277,32 +361,16 @@
       var txt = h1.textContent;
       h1.innerHTML = txt.split('').map(function (c, i) { return '<span class="ch" style="--i:' + i + '">' + c + '</span>'; }).join('');
     }
+    if (motionOn()) {
+      beginMotion(el, function () {
+        gsap.from(el.querySelectorAll('.hero .ch'), { yPercent: 60, opacity: 0, rotation: 4, duration: .7, stagger: .07, ease: MOTION.easeOut });
+        gsap.from(el.querySelectorAll('.hero-eyebrow, .hero-lead, .hero-cta'), { y: 22, opacity: 0, duration: .55, stagger: .12, delay: .25, ease: MOTION.easeOut });
+      });
+    }
     countUp(el);
     bindReveal(el);
-    initStory(el);
     initMagnet(el);
-  }
-
-  function initStory(el) {
-    var sec = el.querySelector('#storySec');
-    if (!sec) return;
-    var panels = Array.prototype.slice.call(el.querySelectorAll('.story-panel'));
-    var dots = Array.prototype.slice.call(el.querySelectorAll('#storyDots i'));
-    var num = el.querySelector('#storyNum');
-    var last = -1;
-    function update() {
-      var r = sec.getBoundingClientRect();
-      var total = sec.offsetHeight - window.innerHeight;
-      var p = total > 0 ? Math.min(1, Math.max(0, -r.top / total)) : 0;
-      var idx = Math.min(panels.length - 1, Math.floor(p * panels.length * 0.999));
-      if (idx === last) return;
-      last = idx;
-      panels.forEach(function (pn, i) { pn.classList.toggle('on', i === idx); });
-      dots.forEach(function (d, i) { d.classList.toggle('on', i === idx); });
-      if (num) num.textContent = '0' + (idx + 1);
-    }
-    window.addEventListener('scroll', update, { passive: true });
-    update();
+    bindAmbient(el);
   }
 
   function initMagnet(el) {
@@ -348,32 +416,135 @@
         (t.notes ? '<div class="tl-notes">' + esc(t.notes) + '</div>' : '') + '</div></a>';
     }).join('');
   }
+  /* 泳道甘特：横轴月份、纵轴三轨；官方=实线块、推算=虚线块；今天=铜金竖线 */
+  function ganttModel() {
+    var items = (window.HUB_TIMELINE || []).filter(function (t) { return t.start; });
+    if (!items.length) return null;
+    var min = Infinity, max = -Infinity;
+    items.forEach(function (t) {
+      var s = new Date(t.start + 'T00:00:00').getTime();
+      var e = new Date((t.end || t.start) + 'T23:59:59').getTime();
+      if (s < min) min = s;
+      if (e > max) max = e;
+    });
+    var d0 = new Date(min); d0.setDate(1); d0.setHours(0, 0, 0, 0);
+    var d1 = new Date(max); d1.setMonth(d1.getMonth() + 1, 1); d1.setHours(0, 0, 0, 0);
+    min = d0.getTime(); max = d1.getTime();
+    var months = [];
+    for (var d = new Date(min); d.getTime() < max; d.setMonth(d.getMonth() + 1)) {
+      months.push({ t: d.getTime(), label: (d.getMonth() + 1) + '月', year: d.getFullYear() });
+    }
+    return { items: items, min: min, max: max, months: months };
+  }
+  /* 月历矩阵：每行一个月、三列三条轨。节点为完整文字条目，不按时长压缩宽度，
+   * 因此永不截断；官方=左侧实线、推算=左侧虚线、当前窗口=铜金底。 */
+  function matrixHtml(model, filter) {
+    var now = new Date();
+    var lanes = ['kaoyan', 'gongkao', 'intern'].filter(function (m) { return filter === 'all' || filter === m; });
+    var groups = {};
+    model.items.forEach(function (t) {
+      var d = new Date(t.start + 'T00:00:00');
+      var k = d.getFullYear() + '-' + d.getMonth();
+      (groups[k] = groups[k] || []).push(t);
+    });
+    var out = '<div class="mx' + (lanes.length === 1 ? ' mx--single' : '') + '" id="mx">' +
+      '<div class="mx-row mx-head"><span class="mx-month">月份</span>' +
+      lanes.map(function (m) { return '<span class="mx-lane">' + esc(MODULE_META[m].name) + '</span>'; }).join('') + '</div>';
+    model.months.forEach(function (mo) {
+      var d = new Date(mo.t);
+      var key = d.getFullYear() + '-' + d.getMonth();
+      var isNowMonth = now.getFullYear() === d.getFullYear() && now.getMonth() === d.getMonth();
+      var items = (groups[key] || []).filter(function (t) { return lanes.indexOf(t.module) > -1; })
+        .sort(function (a, b) { return String(a.start).localeCompare(String(b.start)); });
+      out += '<div class="mx-row' + (isNowMonth ? ' mx-now' : '') + '">' +
+        '<span class="mx-month"><b>' + (d.getMonth() + 1) + '</b><em>月</em>' +
+        (d.getMonth() === 0 || mo === model.months[0] ? '<small>' + d.getFullYear() + '</small>' : '') +
+        (isNowMonth ? '<i class="mx-today">今天</i>' : '') + '</span>' +
+        lanes.map(function (m) {
+          var cell = items.filter(function (t) { return t.module === m; });
+          return '<div class="mx-cell">' + (cell.length ? cell.map(function (t) {
+            var s = new Date(t.start + 'T00:00:00'), e = new Date((t.end || t.start) + 'T23:59:59');
+            var cur = now >= s && now <= e;
+            var cls = 'mx-chip' + (t.kind === 'official' ? ' mx-official' : ' mx-est') + (cur ? ' mx-cur' : '');
+            var range = t.end && t.end !== t.start ? (t.dateLabel || (t.start + ' → ' + t.end)) : (t.dateLabel || t.start);
+            var label = esc(t.stage) + ' · ' + esc(range) + ' · ' + (t.kind === 'official' ? '官方公告' : '预计/推算');
+            return '<a class="' + cls + '" href="#/' + m + '" title="' + label + '" aria-label="' + label + '"><b>' + esc(t.stage) + '</b><small>' + esc(range) + (cur ? ' · 进行中' : '') + '</small></a>';
+          }).join('') : '<span class="mx-empty">本月无节点</span>') + '</div>';
+        }).join('') + '</div>';
+    });
+    out += '</div><p class="g-legend"><i class="lg-official"></i>官方公告（实线）<i class="lg-est"></i>预计 / 推算（虚线）<i class="lg-now"></i>当前窗口</p>';
+    return out;
+  }
   function renderTimeline(el) {
+    var nowT = new Date();
+    var tlNow = 0, tlSoon = 0, tlMonth = 0;
+    (window.HUB_TIMELINE || []).forEach(function (t) {
+      if (!t.start) return;
+      var s = new Date(t.start + 'T00:00:00'), e = new Date((t.end || t.start) + 'T23:59:59');
+      if (nowT >= s && nowT <= e) tlNow++;
+      if (nowT < s && (s - nowT) / 86400000 <= 7) tlSoon++;
+      if (s.getFullYear() === nowT.getFullYear() && s.getMonth() === nowT.getMonth()) tlMonth++;
+    });
     el.innerHTML =
       '<div class="page-head"><div class="page-kicker">Timeline</div><h2 class="page-title">统一时间线</h2>' +
-      '<p class="page-sub">考研 / 考公 / 实习三条路的关键节点按时间对齐。「官方公告」来自官方渠道，「预计 / 推算」按往年规律估算，报考与投递前务必以当年官方通知为准。</p></div>' +
+      '<p class="page-sub">考研 / 考公 / 实习三条路的关键节点按时间对齐。「官方公告」来自官方渠道，「预计 / 推算」按往年规律估算，报考与投递前务必以当年官方通知为准。</p>' +
+      '<div class="tl-headstats"><div class="tl-headstat"><b>' + tlNow + '</b><span>个窗口进行中</span></div>' +
+      '<div class="tl-headstat"><b>' + tlSoon + '</b><span>个 7 天内开始</span></div>' +
+      '<div class="tl-headstat"><b>' + tlMonth + '</b><span>个本月节点</span></div></div></div>' +
       '<div class="chips" id="tlChips"><button class="chip active" data-f="all">全部</button>' +
-      '<button class="chip" data-f="kaoyan">考研</button><button class="chip" data-f="gongkao">考公</button><button class="chip" data-f="intern">实习</button></div>' +
-      '<div class="tl-wrap"><div class="tl-progress"><i id="tlFill"></i></div><div class="tl-list" id="tlList"></div></div>';
+      '<button class="chip" data-f="kaoyan">考研</button><button class="chip" data-f="gongkao">考公</button><button class="chip" data-f="intern">实习</button>' +
+      '<span class="tl-viewseg" role="group" aria-label="视图"><button class="chip active" data-v="matrix">月历</button><button class="chip" data-v="list">清单</button></span></div>' +
+      '<div id="tlMatrix"></div>' +
+      '<div class="tl-wrap" id="tlListWrap" hidden><div class="tl-progress"><i id="tlFill"></i></div><div class="tl-list" id="tlList" aria-live="polite"></div></div>';
+    var model = ganttModel();
+    var mbox = el.querySelector('#tlMatrix');
+    var listWrap = el.querySelector('#tlListWrap');
     var list = el.querySelector('#tlList');
-    list.innerHTML = timelineRows('all');
+    var view = window.matchMedia && matchMedia('(max-width: 980px)').matches ? 'list' : 'matrix';
+    var filter = 'all';
+    function paint() {
+      if (view === 'matrix' && model) {
+        mbox.innerHTML = matrixHtml(model, filter);
+        mbox.hidden = false; listWrap.hidden = true;
+        if (motionOn() && window.ScrollTrigger) {
+          beginMotion(el, function () {
+            var rows = mbox.querySelectorAll('.mx-row');
+            var tl = gsap.timeline({ paused: true });
+            tl.from(rows, { y: 12, opacity: 0, duration: .45, stagger: .035, ease: MOTION.easeOut });
+            var cur = mbox.querySelector('.mx-now');
+            if (cur) tl.from(cur, { backgroundColor: 'rgba(217,179,108,0)', duration: .6, ease: MOTION.easeInOut }, .3);
+            ScrollTrigger.create({ trigger: mbox, start: 'top 85%', once: true, onEnter: function () { tl.play(); } });
+          });
+        }
+      } else {
+        mbox.hidden = true; listWrap.hidden = false;
+        list.innerHTML = timelineRows(filter);
+      }
+      el.querySelectorAll('#tlChips [data-v]').forEach(function (b) { b.classList.toggle('active', b.dataset.v === view); });
+    }
+    paint();
     bindReveal(el);
     el.querySelector('#tlChips').addEventListener('click', function (e) {
-      var b = e.target.closest('.chip');
-      if (!b) return;
-      el.querySelectorAll('.chip').forEach(function (c) { c.classList.toggle('active', c === b); });
-      list.innerHTML = timelineRows(b.dataset.f);
+      var f = e.target.closest('[data-f]');
+      var v = e.target.closest('[data-v]');
+      if (f) {
+        filter = f.dataset.f;
+        el.querySelectorAll('#tlChips [data-f]').forEach(function (c) { c.classList.toggle('active', c === f); });
+      }
+      if (v) view = v.dataset.v;
+      if (f || v) { endMotion(); paint(); }
     });
     var fill = el.querySelector('#tlFill');
     function onScroll() {
       var wrap = el.querySelector('.tl-wrap');
-      if (!wrap || !fill) return;
+      if (!wrap || !fill || wrap.hidden) return;
       var r = wrap.getBoundingClientRect();
       var total = r.height;
       var seen = Math.min(total, Math.max(0, window.innerHeight * 0.35 - r.top));
       fill.style.height = (total > 0 ? Math.min(100, seen / total * 100) : 0) + '%';
     }
     window.addEventListener('scroll', onScroll, { passive: true });
+    onRouteCleanup(function () { window.removeEventListener('scroll', onScroll); });
     onScroll();
   }
 
@@ -441,7 +612,8 @@
       '<div class="page-head"><div class="page-kicker">Decision</div><h2 class="page-title">路径决策</h2>' +
       '<p class="page-sub">十道题覆盖毕业诉求、学术兴趣、应试基础、时间投入、风险偏好、经济因素、地域、年级窗口、已有资源与五年画像。规则透明，结果仅供参考；地址栏带 a= 参数可复现同一份结果。</p></div>' +
       '<div class="progress"><span class="progress-count" id="qCount">0 / 10</span><div class="progress-track"><div class="progress-fill" id="qFill"></div></div></div>' +
-      '<div class="quiz" id="quizBox"></div>' +
+      '<div class="quiz-stage" id="quizStage"></div>' +
+      '<div class="quiz-dots" id="quizDots"></div>' +
       '<div id="pathResult"></div>' +
       '<div class="profile-card reveal"><div class="stamp" style="font-size:11.5px;letter-spacing:.14em;color:var(--teal)">我的三轨档案（可选）</div>' +
       '<p class="page-sub" style="margin:6px 0 0;font-size:13px">只存在本机浏览器。保存后重新进入三个模块会自动预填：考研的预估分 / 省份 / 数学，考公档案的届别 / 专业，实习的城市筛选。</p>' +
@@ -458,23 +630,43 @@
     var pre = (location.hash.match(/a=([\d,]+)/) || [])[1];
     if (pre) pre.split(',').forEach(function (v, i) { if (i < QUIZ.length && QUIZ[i].opts[+v]) answers[i] = +v; });
 
-    var box = el.querySelector('#quizBox');
-    box.innerHTML = QUIZ.map(function (item, qi) {
-      return '<div class="q-card reveal" data-qi="' + qi + '"><div class="q-title"><span style="color:var(--teal);font-size:12px;letter-spacing:.14em">' + esc(item.dim) + '</span><br>' + esc(item.q) + '</div>' +
-        item.opts.map(function (o, oi) {
-          return '<label class="q-opt"><input type="radio" name="q' + qi + '" value="' + oi + '"' + (answers[qi] === oi ? ' checked' : '') + '><span>' + esc(o.t) + '</span></label>';
-        }).join('') + '</div>';
-    }).join('');
+    var stage = el.querySelector('#quizStage');
+    var dotsBox = el.querySelector('#quizDots');
+    var cur = 0;
+    for (var qi0 = 0; qi0 < QUIZ.length; qi0++) { if (answers[qi0] === null) { cur = qi0; break; } }
 
     var lastResult = null;
     var countEl = el.querySelector('#qCount');
     var fillEl = el.querySelector('#qFill');
 
+    function allDone() { return answers.every(function (a) { return a !== null; }); }
     function updateProgress() {
       var done = answers.filter(function (a) { return a !== null; }).length;
       countEl.textContent = done + ' / ' + QUIZ.length;
       fillEl.style.width = (done / QUIZ.length * 100) + '%';
-      el.querySelectorAll('.q-card').forEach(function (c, i) { c.classList.toggle('answered', answers[i] !== null); });
+      dotsBox.querySelectorAll('button').forEach(function (d, i) {
+        d.classList.toggle('answered', answers[i] !== null);
+        d.classList.toggle('cur', i === cur);
+      });
+    }
+    function renderStage() {
+      var item = QUIZ[cur];
+      stage.innerHTML =
+        '<div class="q-card q-focus">' +
+          '<div class="q-num">' + String(cur + 1).padStart(2, '0') + '<span>/ ' + QUIZ.length + '</span></div>' +
+          '<div class="q-title"><span class="q-dim">' + esc(item.dim) + '</span>' + esc(item.q) + '</div>' +
+          item.opts.map(function (o, oi) {
+            return '<label class="q-opt"><input type="radio" name="q' + cur + '" value="' + oi + '"' + (answers[cur] === oi ? ' checked' : '') + '><span>' + esc(o.t) + '</span></label>';
+          }).join('') +
+          '<div class="q-nav">' +
+            '<button class="btn btn-ghost" type="button" data-qnav="prev"' + (cur === 0 ? ' disabled' : '') + '>上一题</button>' +
+            '<button class="btn btn-primary" type="button" data-qnav="next"' + (answers[cur] === null ? ' disabled' : '') + '>' + (cur === QUIZ.length - 1 ? '查看结论' : '下一题') + '<span class="arr">→</span></button>' +
+          '</div>' +
+        '</div>';
+      dotsBox.innerHTML = QUIZ.map(function (q, i) {
+        return '<button type="button" data-qdot="' + i + '" aria-label="第 ' + (i + 1) + ' 题 ' + esc(q.dim) + '"></button>';
+      }).join('');
+      updateProgress();
     }
 
     function updateResult() {
@@ -516,8 +708,10 @@
         '</div>' + '<p class="page-sub" style="margin-top:14px">' + esc(info.next) + '</p>';
       var ring = el.querySelector('#scoreRing');
       if (ring) {
-        if (reduceMotion) ring.style.setProperty('--p', pct);
-        else {
+        if (reduceMotion || shotMode) ring.style.setProperty('--p', pct);
+        else if (motionOn()) {
+          gsap.to(ring, { '--p': pct, duration: .9, ease: 'power3.out' });
+        } else {
           var v = 0;
           var t0 = null;
           requestAnimationFrame(function step(ts) {
@@ -531,11 +725,33 @@
       }
     }
 
-    box.addEventListener('change', function (e) {
+    stage.addEventListener('change', function (e) {
       if (e.target.type !== 'radio') return;
-      answers[+e.target.name.slice(1)] = +e.target.value;
+      answers[cur] = +e.target.value;
       updateProgress();
       updateResult();
+      var nextBtn = stage.querySelector('[data-qnav="next"]');
+      if (nextBtn) nextBtn.disabled = false;
+      if (!allDone() && cur < QUIZ.length - 1) {
+        setTimeout(function () { cur++; renderStage(); }, 260);
+      } else if (allDone()) {
+        renderStage();
+        var r = el.querySelector('#pathResult');
+        if (r) r.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+      }
+    });
+    stage.addEventListener('click', function (e) {
+      var nav = e.target.closest('[data-qnav]');
+      if (!nav) return;
+      if (nav.dataset.qnav === 'prev' && cur > 0) { cur--; renderStage(); }
+      if (nav.dataset.qnav === 'next') {
+        if (cur < QUIZ.length - 1) { cur++; renderStage(); }
+        else { var r = el.querySelector('#pathResult'); if (r) r.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' }); }
+      }
+    });
+    dotsBox.addEventListener('click', function (e) {
+      var d = e.target.closest('[data-qdot]');
+      if (d) { cur = +d.dataset.qdot; renderStage(); }
     });
 
     function buildReport() {
@@ -592,7 +808,7 @@
     el.querySelector('#pfHubScore').value = pf.score || '';
     el.querySelector('#pfHubRegion').value = pf.region || '';
     el.querySelector('#pfHubMath').value = pf.math || '';
-    updateProgress();
+    renderStage();
     updateResult();
     bindReveal(el);
   }
@@ -621,11 +837,35 @@
     if (ni === q.length) return start === 0 ? 1 : 3;
     return -1;
   }
-  function markHit(text, q) {
+  function markHit(text, q, alias) {
     if (!q) return esc(text);
+    var needle = q;
     var i = text.toLowerCase().indexOf(q.toLowerCase());
+    if (i < 0 && alias) { needle = alias; i = text.toLowerCase().indexOf(alias.toLowerCase()); }
     if (i < 0) return esc(text);
-    return esc(text.slice(0, i)) + '<mark>' + esc(text.slice(i, i + q.length)) + '</mark>' + esc(text.slice(i + q.length));
+    return esc(text.slice(0, i)) + '<mark>' + esc(text.slice(i, i + needle.length)) + '</mark>' + esc(text.slice(i + needle.length));
+  }
+  /* 搜索索引按路由懒加载：首屏不再下载 937KB；缓存 Promise 防重复注入 */
+  var searchIndexPromise = null;
+  function ensureSearchIndex() {
+    if (window.HUB_SEARCH) return Promise.resolve(window.HUB_SEARCH);
+    if (searchIndexPromise) return searchIndexPromise;
+    searchIndexPromise = new Promise(function (res, rej) {
+      var s = document.createElement('script');
+      s.src = 'shared/search-index.js';
+      s.onload = function () { res(window.HUB_SEARCH || []); };
+      s.onerror = function () { searchIndexPromise = null; rej(new Error('search-index load failed')); };
+      document.head.appendChild(s);
+    });
+    return searchIndexPromise;
+  }
+  var RECENT_KEY = 'hub_recent_v1';
+  function recentGet() { try { return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); } catch (e) { return []; } }
+  function recentPush(q) {
+    if (!q) return;
+    var list = recentGet().filter(function (x) { return x !== q; });
+    list.unshift(q);
+    try { localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, 6))); } catch (e) {}
   }
   function renderSearch(el, query) {
     var q0 = decodeURIComponent((query.match(/q=([^&]*)/) || [])[1] || '');
@@ -633,13 +873,28 @@
       '<div class="page-head"><div class="page-kicker">Search</div><h2 class="page-title">全局搜索</h2>' +
       '<p class="page-sub">一个搜索框同时命中考研院校、考公岗位与实习机构，共 17,819 条索引；点击结果直达模块并自动定位。</p></div>' +
       '<div class="palette"><input id="searchInput" type="search" placeholder="搜院校 / 招录机关 / 职位 / 公司，如：北大 税务局 中信" value="' + esc(q0) + '"><kbd>ESC 清空</kbd></div>' +
-      '<div id="searchResults"></div>';
+      '<div id="searchResults" aria-live="polite"></div>';
     var input = el.querySelector('#searchInput');
     var box = el.querySelector('#searchResults');
     var timer = null;
-    function run() {
+    var activeIdx = -1;
+    function setActive(i) {
+      var items = box.querySelectorAll('.sr-item');
+      if (!items.length) { activeIdx = -1; return; }
+      activeIdx = Math.max(0, Math.min(items.length - 1, i));
+      items.forEach(function (it, k) { it.classList.toggle('active', k === activeIdx); });
+      items[activeIdx].scrollIntoView({ block: 'nearest' });
+    }
+    function run(animate) {
+      if (!window.HUB_SEARCH) return;
       var q = input.value.trim().toLowerCase();
-      if (!q) { box.innerHTML = '<div class="hub-placeholder">输入关键词开始搜索。</div>'; return; }
+      activeIdx = -1;
+      if (!q) {
+        var rec = recentGet();
+        box.innerHTML = (rec.length ? '<div class="sr-recent"><span>最近搜索</span>' + rec.map(function (r) { return '<button class="chip" type="button" data-recent="' + esc(r) + '">' + esc(r) + '</button>'; }).join('') + '</div>' : '') +
+          '<div class="hub-placeholder">输入关键词开始搜索；↑↓ 选择结果，Enter 打开。</div>';
+        return;
+      }
       var groups = { k: [], g: [], i: [] };
       var idx = window.HUB_SEARCH || [];
       var qq = SEARCH_ALIAS[q] || q;
@@ -660,15 +915,37 @@
         var show = groups[t].slice(0, 12);
         html += '<div class="sr-group"><h3>' + names[t] + '（' + groups[t].length + (groups[t].length > show.length ? '+' : '') + '）</h3>' +
           show.map(function (e) {
-            return '<a class="sr-item" href="#/' + SEARCH_ROUTE[t] + '?focus=' + encodeURIComponent(e.id) + '"><b>' + markHit(e.n, q) + '</b><small>' + esc(e.s) + '</small></a>';
+            return '<a class="sr-item" href="#/' + SEARCH_ROUTE[t] + '?focus=' + encodeURIComponent(e.id) + '"><b>' + markHit(e.n, q, qq) + '</b><small>' + esc(e.s) + '</small></a>';
           }).join('') + '</div>';
       });
       box.innerHTML = html;
+      if (animate && motionOn()) {
+        beginMotion(el, function () {
+          gsap.from(Array.prototype.slice.call(box.querySelectorAll('.sr-item'), 0, 12), { y: 14, opacity: 0, duration: .35, stagger: .05, ease: MOTION.easeOut, clearProps: 'all' });
+        });
+      }
     }
     input.addEventListener('input', function () { if (timer) clearTimeout(timer); timer = setTimeout(run, 140); });
-    input.addEventListener('keydown', function (e) { if (e.key === 'Escape') { input.value = ''; run(); } });
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') { input.value = ''; run(); return; }
+      if (e.key === 'ArrowDown') { e.preventDefault(); setActive(activeIdx + 1); }
+      if (e.key === 'ArrowUp') { e.preventDefault(); setActive(activeIdx - 1); }
+      if (e.key === 'Enter') {
+        var items = box.querySelectorAll('.sr-item');
+        var target = items[activeIdx >= 0 ? activeIdx : 0];
+        if (target) { e.preventDefault(); recentPush(input.value.trim()); target.click(); }
+      }
+    });
+    box.addEventListener('click', function (e) {
+      var rc = e.target.closest('[data-recent]');
+      if (rc) { input.value = rc.dataset.recent; run(true); input.focus(); return; }
+      if (e.target.closest('.sr-item')) recentPush(input.value.trim());
+    });
     if (!isTouch) setTimeout(function () { input.focus(); }, 80);
-    run();
+    box.innerHTML = '<div class="hub-placeholder">正在加载搜索索引…</div>';
+    ensureSearchIndex().then(function () { run(true); }).catch(function () {
+      box.innerHTML = '<div class="hub-placeholder">搜索索引加载失败，请刷新重试。</div>';
+    });
   }
 
   /* ---------------- 关于 ---------------- */
@@ -704,26 +981,126 @@
     var meta = MODULE_META[name];
     var stat = '';
     if (name === 'kaoyan') stat = '211 所院校 · 2027 简章已核对';
-    else if (name === 'gongkao') stat = '16,543 个岗位 · 快照 ' + (st.generatedAt || '');
+    else if (name === 'gongkao') stat = '16,543 个岗位 · 快照 ' + (st.gkSnapshot || st.generatedAt || '');
     else if (name === 'intern') stat = (st.internOpen || 0) + ' 家开放中' + (st.internClosing7 ? ' · 本周截止 ' + st.internClosing7 + ' 家' : '');
-    return '<div class="module-bar"><span class="dot"></span><b>' + meta.name + '</b><span class="stat">' + esc(stat) + '</span>' +
+    return '<div class="module-bar"><button class="menu-btn" type="button" aria-label="打开导航菜单">☰</button><span class="dot"></span><b>' + meta.name + '</b><span class="stat">' + esc(stat) + '</span>' +
       '<a class="back" href="#/home">返回首页</a></div>';
   }
 
   function mountFrame(name, el, query) {
     var wrap = document.createElement('div');
+    wrap.className = 'frame-wrap';
     wrap.innerHTML = moduleBar(name);
     frame = document.createElement('iframe');
     frame.className = 'hub-frame';
     frame.title = name;
     frame.loading = 'lazy';
-    frame.src = FRAME_SRC[name] + (query ? '?' + query : '');
+    frame.dataset.src = FRAME_SRC[name] + '?' + (query ? query + '&' : '') + 'hubtheme=' + themePref();
+    /* 转场进行中先不解析 iframe，避免同源 iframe 的解析/渲染和翻页动画抢主线程 */
+    var startFrame = function () { if (!frame.getAttribute('src')) frame.src = frame.dataset.src; };
+    if (document.body.classList.contains('peeling')) setTimeout(startFrame, 640); else startFrame();
+    var skel = document.createElement('div');
+    skel.className = 'frame-skel';
+    skel.setAttribute('aria-hidden', 'true');
+    skel.innerHTML = '<div class="sk-title"></div><div class="sk-row"></div><div class="sk-row"></div><div class="sk-row"></div><div class="sk-block"></div>';
     wrap.appendChild(frame);
+    wrap.appendChild(skel);
     el.appendChild(wrap);
+    frame.addEventListener('load', function () {
+      frame.classList.add('ready');
+      /* 考研的数据是异步 fetch 的，load 时列表还没渲染：等 hub-module-ready 再撤骨架 */
+      if (name === 'kaoyan') setTimeout(function () { if (skel.parentNode) skel.remove(); }, 2600);
+      else if (skel.parentNode) skel.remove();
+      try {
+        frame.contentWindow.postMessage({ type: 'hub-theme', theme: themePref() }, location.origin);
+        frame.contentWindow.postMessage({ type: 'hub-cursor-init', enabled: cursorEnabled }, location.origin);
+      } catch (e) {}
+    });
+    var menu = wrap.querySelector('.menu-btn');
+    if (menu) menu.addEventListener('click', openDrawer);
+  }
+
+  /* ---------------- 抽屉 / 主题控件 / 跨 iframe 消息 ---------------- */
+  var drawer = document.getElementById('hubDrawer');
+  var tabMore = document.getElementById('tabMore');
+  function openDrawer() {
+    if (!drawer) return;
+    drawer.hidden = false;
+    void drawer.offsetWidth;
+    drawer.classList.add('open');
+    if (tabMore) tabMore.setAttribute('aria-expanded', 'true');
+  }
+  function closeDrawer(immediate) {
+    if (!drawer || drawer.hidden) return;
+    drawer.classList.remove('open');
+    if (tabMore) tabMore.setAttribute('aria-expanded', 'false');
+    if (immediate) { drawer.hidden = true; return; }
+    setTimeout(function () { if (!drawer.classList.contains('open')) drawer.hidden = true; }, 320);
+  }
+
+  window.addEventListener('message', function (e) {
+    if (e.origin !== location.origin || !e.data) return;
+    if (e.data.type === 'hub-cursor') {
+      if (!frame || !cursorEnabled) { cursorBridge.active = false; return; }
+      if (e.data.inside) {
+        var r = frame.getBoundingClientRect();
+        cursorBridge.active = true;
+        cursorBridge.x = r.left + e.data.x;
+        cursorBridge.y = r.top + e.data.y;
+      } else cursorBridge.active = false;
+    } else if (e.data.type === 'hub-theme-changed') {
+      setShellTheme(e.data.theme, false);
+    } else if (e.data.type === 'hub-bridge-ready') {
+      try {
+        e.source.postMessage({ type: 'hub-theme', theme: themePref() }, location.origin);
+        e.source.postMessage({ type: 'hub-cursor-init', enabled: cursorEnabled }, location.origin);
+      } catch (err) {}
+    } else if (e.data.type === 'hub-module-ready') {
+      if (frame) frame.classList.add('ready');
+      var sk = document.querySelector('.frame-skel');
+      if (sk) sk.remove();
+    }
+  });
+
+  /* 离屏暂停 ambient 动效（光点/跑马灯/叙事光束） */
+  var ambientObs = ('IntersectionObserver' in window) ? new IntersectionObserver(function (ens) {
+    ens.forEach(function (en) { en.target.classList.toggle('paused', !en.isIntersecting); });
+  }, { threshold: 0 }) : null;
+  function bindAmbient(el) {
+    if (!ambientObs) return;
+    var targets = [el.querySelector('.hero'), el.querySelector('.story')].filter(Boolean);
+    targets.forEach(function (t) { ambientObs.observe(t); });
+    onRouteCleanup(function () { targets.forEach(function (t) { ambientObs.unobserve(t); }); });
+  }
+
+  /* 流星：只在路径 / 时间线 / 搜索 / 关于四条非首页路由出现，低频、可降级 */
+  var meteorLayer = null;
+  function syncMeteors(name) {
+    var want = ['path', 'timeline', 'search', 'about'].indexOf(name) > -1;
+    if (!want || reduceMotion || shotMode) {
+      if (meteorLayer) { meteorLayer.remove(); meteorLayer = null; }
+      return;
+    }
+    if (meteorLayer) return;
+    meteorLayer = document.createElement('div');
+    meteorLayer.className = 'meteor-layer';
+    meteorLayer.setAttribute('aria-hidden', 'true');
+    meteorLayer.innerHTML =
+      '<i class="meteor meteor--teal" style="--t:-8%;--l:-18%;--dur:11s;--delay:.6s"></i>' +
+      '<i class="meteor meteor--brass" style="--t:6%;--l:-26%;--dur:13s;--delay:2.6s"></i>' +
+      '<i class="meteor meteor--teal" style="--t:-14%;--l:6%;--dur:12s;--delay:4.8s"></i>' +
+      '<i class="meteor meteor--brass" style="--t:22%;--l:-30%;--dur:14s;--delay:7s"></i>' +
+      '<i class="meteor meteor--teal" style="--t:-4%;--l:-10%;--dur:10s;--delay:9.2s"></i>' +
+      '<i class="meteor meteor--brass" style="--t:36%;--l:-22%;--dur:15s;--delay:11.4s"></i>';
+    document.body.appendChild(meteorLayer);
   }
 
   var curtain = document.getElementById('curtain');
   function render() {
+    flushRouteCleanups();
+    endMotion();
+    cursorBridge.active = false;
+    closeDrawer(true);
     var raw = (location.hash || '#/home').replace(/^#\/?/, '');
     var name = raw.split('?')[0] || 'home';
     var query = raw.split('?')[1] || '';
@@ -732,7 +1109,8 @@
     var el = rootEl();
     el.innerHTML = '';
     document.body.setAttribute('data-route', name);
-    document.querySelectorAll('.hub-nav a').forEach(function (a) {
+    syncMeteors(name);
+    document.querySelectorAll('.hub-nav a, .hub-tabbar a, .hub-drawer-nav a').forEach(function (a) {
       a.classList.toggle('active', a.getAttribute('data-route') === name);
     });
     window.scrollTo(0, 0);
@@ -744,8 +1122,46 @@
     mountFrame(name, el, query);
   }
 
+  var navTl = null;
+  var navRendered = false;
   function navigate() {
-    if (!curtain || reduceMotion) { render(); return; }
+    if (!curtain || reduceMotion || shotMode) { render(); return; }
+    if (motionOn()) {
+      var peel = document.getElementById('peel');
+      if (navTl) navTl.kill();
+      navRendered = false;
+      var doRender = function () { if (navRendered) return; navRendered = true; render(); };
+      var collapsedBR = 'polygon(100% 100%, 100% 100%, 100% 100%, 100% 100%)';
+      var fullRect = 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)';
+      var collapsedTL = 'polygon(0% 0%, 0% 0%, 0% 0%, 0% 0%)';
+      if (!peel) { doRender(); return; }
+      var rawHash = (location.hash || '#/home').replace(/^#\/?/, '');
+      var dest = rawHash.split('?')[0] || 'home';
+      if (ROUTES.indexOf(dest) < 0) dest = 'home';
+      var pt = PEEL_THEME[dest] || PEEL_THEME.home;
+      peel.style.setProperty('--peel-bg', pt.bg);
+      peel.classList.toggle('peel--ink', !!pt.ink);
+      document.body.classList.add('peeling');
+      navTl = gsap.timeline({
+        onComplete: function () { navTl = null; document.body.classList.remove('peeling'); gsap.set(peel, { clipPath: collapsedTL }); }
+      });
+      /* 掀角：纸从右下角斜扫上来盖住页面，盖满时换页，再从左上角收起；
+       * 前缘带折痕高光与投影（filter: drop-shadow 跟随 clip-path）。约 1.0s。 */
+      navTl
+        .set(peel, { clipPath: collapsedBR })
+        .to(peel, { clipPath: fullRect, duration: .46, ease: 'power2.inOut' })
+        .add(doRender)
+        .to(peel, { clipPath: collapsedTL, duration: .54, ease: 'power2.out' });
+      setTimeout(function () {
+        if (!navRendered) {
+          if (navTl) { navTl.kill(); navTl = null; }
+          document.body.classList.remove('peeling');
+          gsap.set(peel, { clipPath: collapsedTL });
+          doRender();
+        }
+      }, 1250);
+      return;
+    }
     curtain.classList.add('on');
     setTimeout(function () {
       render();
@@ -754,10 +1170,39 @@
   }
 
   document.addEventListener('DOMContentLoaded', function () {
+    if (window.gsap && window.ScrollTrigger && !legacyMotion && !reduceMotion && !shotMode) {
+      gsap.registerPlugin(ScrollTrigger);
+      gsap.defaults({ duration: .5, ease: 'power2.out' });
+      motionEnabled = true;
+      document.documentElement.classList.add('gsap-motion');
+    }
     initCursor();
     initHeader();
     initTilt();
     bindReveal(document);
+    applyShellTheme(themePref(), false);
+    var themeBtn = document.getElementById('hubThemeBtn');
+    if (themeBtn) themeBtn.addEventListener('click', function () {
+      var order = ['light', 'dark', 'auto'];
+      var next = order[(order.indexOf(themePref()) + 1) % order.length];
+      setShellTheme(next, true);
+    });
+    if (tabMore) tabMore.addEventListener('click', openDrawer);
+    var drawerClose = document.getElementById('drawerClose');
+    if (drawerClose) drawerClose.addEventListener('click', function () { closeDrawer(false); });
+    if (drawer) {
+      drawer.addEventListener('click', function (e) {
+        if (e.target.closest('.hub-drawer-nav a')) closeDrawer(false);
+        var t = e.target.closest('.hub-drawer-theme [data-t]');
+        if (t) setShellTheme(t.dataset.t, true);
+      });
+    }
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeDrawer(false); });
+    if (window.matchMedia) {
+      var mq = matchMedia('(prefers-color-scheme: dark)');
+      var onSys = function () { if (themePref() === 'auto') applyShellTheme('auto', true); };
+      if (mq.addEventListener) mq.addEventListener('change', onSys);
+    }
     document.body.setAttribute('data-route', (location.hash || '#/home').replace(/^#\/?/, '').split('?')[0] || 'home');
     render();
   });
