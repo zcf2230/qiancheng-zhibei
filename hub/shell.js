@@ -356,15 +356,11 @@
         '</ul></div>' +
       '</div></section>';
 
-    var h1 = el.querySelector('#heroTitle');
-    if (h1 && !reduceMotion && !shotMode) {
-      var txt = h1.textContent;
-      h1.innerHTML = txt.split('').map(function (c, i) { return '<span class="ch" style="--i:' + i + '">' + c + '</span>'; }).join('');
-    }
+    /* 主标题不做逐字隐藏动画：保证任何截图/慢设备下都完整可读 */
     if (motionOn()) {
       beginMotion(el, function () {
-        gsap.from(el.querySelectorAll('.hero .ch'), { yPercent: 60, opacity: 0, rotation: 4, duration: .7, stagger: .07, ease: MOTION.easeOut });
-        gsap.from(el.querySelectorAll('.hero-eyebrow, .hero-lead, .hero-cta'), { y: 22, opacity: 0, duration: .55, stagger: .12, delay: .25, ease: MOTION.easeOut });
+        /* 标题分字交给 CSS 动画；这里只做位移，不动透明度，避免任何环境下文字消失 */
+        gsap.from(el.querySelectorAll('.hero-eyebrow, .hero-lead, .hero-cta'), { y: 22, duration: .55, stagger: .12, delay: .25, ease: MOTION.easeOut });
       });
     }
     countUp(el);
@@ -506,14 +502,13 @@
       if (view === 'matrix' && model) {
         mbox.innerHTML = matrixHtml(model, filter);
         mbox.hidden = false; listWrap.hidden = true;
-        if (motionOn() && window.ScrollTrigger) {
+        if (motionOn()) {
           beginMotion(el, function () {
             var rows = mbox.querySelectorAll('.mx-row');
-            var tl = gsap.timeline({ paused: true });
-            tl.from(rows, { y: 12, opacity: 0, duration: .45, stagger: .035, ease: MOTION.easeOut });
+            var tl = gsap.timeline();
+            tl.from(rows, { y: 12, duration: .45, stagger: .035, ease: MOTION.easeOut });
             var cur = mbox.querySelector('.mx-now');
             if (cur) tl.from(cur, { backgroundColor: 'rgba(217,179,108,0)', duration: .6, ease: MOTION.easeInOut }, .3);
-            ScrollTrigger.create({ trigger: mbox, start: 'top 85%', once: true, onEnter: function () { tl.play(); } });
           });
         }
       } else {
@@ -711,6 +706,7 @@
         if (reduceMotion || shotMode) ring.style.setProperty('--p', pct);
         else if (motionOn()) {
           gsap.to(ring, { '--p': pct, duration: .9, ease: 'power3.out' });
+          setTimeout(function () { ring.style.setProperty('--p', pct); }, 1200);
         } else {
           var v = 0;
           var t0 = null;
@@ -921,7 +917,7 @@
       box.innerHTML = html;
       if (animate && motionOn()) {
         beginMotion(el, function () {
-          gsap.from(Array.prototype.slice.call(box.querySelectorAll('.sr-item'), 0, 12), { y: 14, opacity: 0, duration: .35, stagger: .05, ease: MOTION.easeOut, clearProps: 'all' });
+          gsap.from(Array.prototype.slice.call(box.querySelectorAll('.sr-item'), 0, 12), { y: 14, duration: .35, stagger: .05, ease: MOTION.easeOut, clearProps: 'all' });
         });
       }
     }

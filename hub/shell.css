@@ -196,9 +196,7 @@ body[data-route="home"] .hub-main { padding-top: 0; }
   font-size: clamp(56px, 9vw, 128px); line-height: 1.02; letter-spacing: .04em;
   margin: 22px 0 18px; display: flex; flex-wrap: wrap;
 }
-.hero h1 .ch { display: inline-block; opacity: 0; transform: translateY(60%) rotate(4deg); animation: chIn .9s var(--ease) forwards; animation-delay: calc(var(--i) * 90ms + 200ms); }
-@keyframes chIn { to { opacity: 1; transform: none; } }
-.hero-lead { max-width: 620px; color: rgba(242, 239, 230, .72); font-size: 16px; line-height: 1.9; }
+.hero-lead { max-width: 660px; color: rgba(242, 239, 230, .72); font-size: 17.5px; line-height: 1.9; }
 .hero-cta { display: flex; gap: 14px; margin-top: 34px; flex-wrap: wrap; }
 .btn {
   display: inline-flex; align-items: center; gap: 10px;
@@ -667,7 +665,7 @@ html.custom-cursor :focus-visible { outline: 2px solid var(--teal-2); outline-of
 /* ==========================================================================
    Phase 2 · GSAP 接管时关掉对应的 CSS 动画，避免双重驱动
    ========================================================================== */
-html.gsap-motion .hero h1 .ch { animation: none; }
+/* 标题分字仍走 CSS 动画（任何环境都能跑完，不会停在不可见状态） */
 html.gsap-motion .curtain { transition: none; }
 
 /* ==========================================================================
