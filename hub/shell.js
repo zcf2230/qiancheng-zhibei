@@ -1026,6 +1026,9 @@
       b.textContent = on ? '退出全屏' : '全屏';
       b.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
+    if (frame && frame.contentWindow) {
+      try { frame.contentWindow.postMessage({ type: 'hub-immersive', on: on }, location.origin); } catch (e) {}
+    }
     if (on && frame) { try { frame.focus(); } catch (e) {} }
   }
   function toggleImmersive() { setImmersive(!document.body.classList.contains('immersive')); }

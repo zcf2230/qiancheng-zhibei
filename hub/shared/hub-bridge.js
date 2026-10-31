@@ -13,6 +13,8 @@
     if (e.origin !== ORIGIN || !e.data) return;
     if (e.data.type === 'hub-theme' && window.HubTheme && typeof window.HubTheme.set === 'function') {
       window.HubTheme.set(e.data.theme);
+    } else if (e.data.type === 'hub-immersive') {
+      document.documentElement.classList.toggle('hub-immersive', !!e.data.on);
     } else if (e.data.type === 'hub-cursor-init') {
       setCursor(!!e.data.enabled && !reduce && !touch);
     }

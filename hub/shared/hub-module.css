@@ -560,3 +560,13 @@ html[data-theme="dark"][data-module="gongkao"] .chart-bar.hot { background: var(
 [data-module="kaoyan"] .school.nofin { contain-intrinsic-size: auto 120px; }
 @media (max-width: 900px) { [data-module="kaoyan"] .school { contain-intrinsic-size: auto 230px; } }
 [data-module="gongkao"] .pos-table tbody tr { content-visibility: auto; contain-intrinsic-size: auto 42px; }
+
+/* 全屏（沉浸）时：实习模块的「公司库 / 时间轴 / …」标签条居中 */
+html.hub-immersive[data-module="intern"] .tabs {
+  display: flex !important;
+  width: max-content !important;
+  max-width: calc(100% - 32px);
+  margin-left: auto !important;
+  margin-right: auto !important;
+  justify-content: center;
+}
