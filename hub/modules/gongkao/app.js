@@ -11,11 +11,11 @@ const DATA_DIR = 'data/';
 // 顺序即优先级：同名考试以先出现的文件为主（overallStats/timeline/examStructure），positions 追加
 // 注意：shanghai2026_b.json 目前尚未创建（上海数据待补齐），loadBuiltins 会记为 missing 而非报错；
 //       补齐该文件后无需改代码即可自动生效。
-const BUILTIN_FILES = ['zhejiangxuandiao2027.json', 'guokao2027.json', 'guokao2026.json', 'guokao2026_b.json', 'guokao2026_c.json', 'zhejiang2026.json', 'zhejiang2026_b.json', 'shandong2026.json', 'shandong2026_b.json', 'shandong2026_c.json', 'shandong2026_d.json', 'shanghai2026.json', 'shanghai2026_b.json'];
+const BUILTIN_FILES = ['zhejiangxuandiao2027.json', 'zhejiang2027.json', 'guokao2027.json', 'guokao2026.json', 'guokao2026_b.json', 'guokao2026_c.json', 'zhejiang2026.json', 'zhejiang2026_b.json', 'shandong2026.json', 'shandong2026_b.json', 'shandong2026_c.json', 'shandong2026_d.json', 'shanghai2026.json', 'shanghai2026_b.json'];
 const KOUBEI_FILE = DATA_DIR + 'koubei.json';
 const CUSTOM_FILE = DATA_DIR + 'custom_imports.json';
 const LS_CUSTOM_KEY = 'gongkao.custom_imports';
-const DATA_UPDATED_AT = '2026-10-28';
+const DATA_UPDATED_AT = '2026-11-05';
 const readCustom = () => { try { return JSON.parse(localStorage.getItem(LS_CUSTOM_KEY) || 'null'); } catch { return null; } };
 const writeCustom = o => localStorage.setItem(LS_CUSTOM_KEY, JSON.stringify(o));
 const clearCustom = () => localStorage.removeItem(LS_CUSTOM_KEY);

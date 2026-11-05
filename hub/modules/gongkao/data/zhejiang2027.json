@@ -1,0 +1,40 @@
+{
+  "exam": "浙江省考",
+  "year": 2027,
+  "overallStats": {
+    "totalPositions": null,
+    "totalQuota": 4511,
+    "totalApplicants": null,
+    "avgRatio": null,
+    "source": "浙江省公务员局《浙江省各级机关单位2027年度考试录用公务员公告》（2026-11-05）：全省计划考录公务员 4511 名（含山区海岛县专项招录预留计划）。职位表为公告 xlsx 附件，尚未导入本库，故无逐岗数据。",
+    "libraryPositions": 0,
+    "libraryQuota": 0,
+    "libraryCoverage": "2027 年度职位表（官方 xlsx 附件）待导入；当前仅提供公告时间线与考试结构。",
+    "librarySource": "http://gwy.zjks.gov.cn"
+  },
+  "timeline": [
+    {
+      "stage": "公告发布",
+      "date": "2026-11-05",
+      "source": "http://gwy.zjks.gov.cn"
+    },
+    {
+      "stage": "网上报名",
+      "date": "2026-11-06 9:00 至 2026-11-11 17:00",
+      "source": "http://gwy.zjks.gov.cn"
+    },
+    {
+      "stage": "资格初审",
+      "date": "2026-11-06 9:00 至 2026-11-13 17:00",
+      "source": "http://gwy.zjks.gov.cn"
+    },
+    {
+      "stage": "笔试",
+      "date": "2026-12-05 至 2026-12-06",
+      "source": "http://gwy.zjks.gov.cn"
+    }
+  ],
+  "examStructure": "公共科目为《行政职业能力测验》和《申论》，按职位分 A（综合类）、B（基层类）、C（行政执法类）、D（优秀村干部类）四类试卷；2027 年度行测继续单独设置「政治理论」部分。行测 9:00—11:00、申论 14:00—16:30，两科满分各 100 分。缴费、面试、体检、考察等环节详见公告及《报考指南》。",
+  "positions": [],
+  "positionsNote": "2027 年度职位表为官方 xlsx 附件（2027年浙江省各级机关单位公务员考录计划一览表），尚未导入本库；导入后可逐岗筛选。"
+}

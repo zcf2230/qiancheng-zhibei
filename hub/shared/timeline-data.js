@@ -1,6 +1,50 @@
 /* 三岔路统一时间线数据：考研取自择校通内置里程碑，考公取自岗位库 timeline（已滤除每日报名统计），实习为往年规律推算窗口。
-   生成于 2026-10-30；kind: official=官方公告 / third=第三方口径 / estimate=预计或推算。 */
+   生成于 2026-11-05；kind: official=官方公告 / third=第三方口径 / estimate=预计或推算。 */
 window.HUB_TIMELINE = [
+ {
+  "module": "gongkao",
+  "exam": "浙江省考 2027",
+  "stage": "公告发布（招录 4511 名，含山区海岛县专项预留）",
+  "start": "2026-11-05",
+  "end": "2026-11-05",
+  "dateLabel": "2026-11-05",
+  "kind": "official",
+  "notes": "浙江省公务员局公告；职位表为公告 xlsx 附件，本库待导入。",
+  "source": "http://gwy.zjks.gov.cn"
+ },
+ {
+  "module": "gongkao",
+  "exam": "浙江省考 2027",
+  "stage": "网上报名",
+  "start": "2026-11-06",
+  "end": "2026-11-11",
+  "dateLabel": "2026-11-06 9:00 ~ 11-11 17:00",
+  "kind": "official",
+  "notes": "",
+  "source": "http://gwy.zjks.gov.cn"
+ },
+ {
+  "module": "gongkao",
+  "exam": "浙江省考 2027",
+  "stage": "资格初审",
+  "start": "2026-11-06",
+  "end": "2026-11-13",
+  "dateLabel": "2026-11-06 9:00 ~ 11-13 17:00",
+  "kind": "official",
+  "notes": "",
+  "source": "http://gwy.zjks.gov.cn"
+ },
+ {
+  "module": "gongkao",
+  "exam": "浙江省考 2027",
+  "stage": "笔试（行测 9:00—11:00，申论 14:00—16:30）",
+  "start": "2026-12-05",
+  "end": "2026-12-06",
+  "dateLabel": "2026-12-05 ~ 12-06",
+  "kind": "official",
+  "notes": "分 A 综合类 / B 基层类 / C 行政执法类 / D 优秀村干部类四类试卷；行测继续单独设置「政治理论」部分。",
+  "source": "http://gwy.zjks.gov.cn"
+ },
  {
   "module": "gongkao",
   "exam": "国考 2027",
@@ -71,23 +115,23 @@ window.HUB_TIMELINE = [
   "module": "kaoyan",
   "exam": "金融考研 2027",
   "stage": "预报名",
-  "start": "2026-09-24",
-  "end": "2026-09-28",
-  "dateLabel": "2026 年 9 月下旬",
+  "start": "2026-10-09",
+  "end": "2026-10-12",
+  "dateLabel": "2026-10-09 ~ 10-12（每日 9:00—22:00）",
   "kind": "official",
-  "notes": "应届生可预报名，报名信息与正式报名同等有效。",
-  "source": ""
+  "notes": "教育部《2027 年全国硕士研究生招生工作管理规定》；预报名与正式报名同等有效。",
+  "source": "http://www.moe.gov.cn/srcsite/A15/moe_778/s3261/202609/t20260923_1451734.html"
  },
  {
   "module": "kaoyan",
   "exam": "金融考研 2027",
   "stage": "正式报名",
-  "start": "2026-10-08",
-  "end": "2026-10-27",
-  "dateLabel": "2026-10-08 ~ 10-27（预计）",
-  "kind": "estimate",
+  "start": "2026-10-15",
+  "end": "2026-10-24",
+  "dateLabel": "2026-10-15 ~ 10-24（每日 9:00—22:00）",
+  "kind": "official",
   "notes": "研招网统一报名，只能保留一条有效报名信息，逾期不补。",
-  "source": ""
+  "source": "http://www.moe.gov.cn/srcsite/A15/moe_778/s3261/202609/t20260923_1451734.html"
  },
  {
   "module": "gongkao",
@@ -213,13 +257,13 @@ window.HUB_TIMELINE = [
  {
   "module": "kaoyan",
   "exam": "金融考研 2027",
-  "stage": "网上确认",
-  "start": "2026-11-01",
-  "end": "2026-11-08",
-  "dateLabel": "2026 年 11 月上旬（预计）",
-  "kind": "estimate",
-  "notes": "上传照片与学历学籍材料，具体时间以各报考点公告为准。",
-  "source": ""
+  "stage": "材料审核（报名与网上确认一体化）",
+  "start": "2026-10-26",
+  "end": "2026-10-31",
+  "dateLabel": "报名结束后由各报考点集中审核（各省时间不同）",
+  "kind": "official",
+  "notes": "2027 年起取消单独网上确认环节，报名时一并提交核验材料；如山东为 10-26 9:00 至 10-31 17:00。",
+  "source": "http://www.moe.gov.cn/srcsite/A15/moe_778/s3261/202609/t20260923_1451734.html"
  },
  {
   "module": "intern",
@@ -314,11 +358,11 @@ window.HUB_TIMELINE = [
   "exam": "金融考研 2027",
   "stage": "初试",
   "start": "2026-12-19",
-  "end": "2026-12-22",
-  "dateLabel": "2026 年 12 月下旬（预计）",
-  "kind": "estimate",
-  "notes": "第一天上午政治、下午英语；第二天上午数学/396、下午 431 金融学综合。",
-  "source": ""
+  "end": "2026-12-20",
+  "dateLabel": "2026-12-19 ~ 12-20（教育部规定）",
+  "kind": "official",
+  "notes": "19 日上午政治／管综、下午外语；20 日上午业务课一／专业基础综合、下午业务课二。",
+  "source": "http://www.moe.gov.cn/srcsite/A15/moe_778/s3261/202609/t20260923_1451734.html"
  },
  {
   "module": "kaoyan",
