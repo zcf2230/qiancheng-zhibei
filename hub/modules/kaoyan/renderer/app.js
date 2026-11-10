@@ -52,7 +52,10 @@ const MAJORS = {
   cs:   { label: '计算机/电子信息', z: '计算机专硕',         x: '计算机学硕',       zCode: '0854',   xCode: '0812', cat: '工学',   dir: 'cs/',  math: [['数学一', '考数一'], ['数学二', '考数二'], ['408', '考408']] },
   law:  { label: '法律(非法学)',    z: '法律专硕(非法学)',   x: '',                 zCode: '035101', xCode: '',     cat: '法学',   dir: 'law/', math: [] },
   stat: { label: '应用统计',        z: '应用统计专硕',       x: '统计学硕',         zCode: '0252',   xCode: '0714', cat: '经济学', dir: 'stat/',math: [['数学三', '考数三']] },
-  mib:  { label: '国际商务',        z: '国际商务专硕',       x: '国际贸易学硕',     zCode: '0254',   xCode: '0202', cat: '经济学', dir: 'mib/', math: [['数学三', '考数三'], ['396', '考396']] }
+  mib:  { label: '国际商务',        z: '国际商务专硕',       x: '国际贸易学硕',     zCode: '0254',   xCode: '0202', cat: '经济学', dir: 'mib/', math: [['数学三', '考数三'], ['396', '考396']] },
+  mpacc:{ label: '会计MPAcc',       z: '会计专硕',           x: '会计学硕',         zCode: '1253',   xCode: '1202', cat: '管理学', dir: 'mpacc/',math: [] },
+  edu:  { label: '教育',            z: '教育专硕',           x: '教育学硕',         zCode: '0451',   xCode: '0401', cat: '教育学', dir: 'edu/', math: [] },
+  jmc:  { label: '新闻与传播',      z: '新传专硕',           x: '新闻传播学硕',     zCode: '0552',   xCode: '0503', cat: '文学',   dir: 'jmc/', math: [] }
 };
 let CUR_MAJOR = 'fin';
 const majorCfg = () => MAJORS[CUR_MAJOR] || MAJORS.fin;
