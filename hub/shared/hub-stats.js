@@ -1,6 +1,6 @@
 /* 前程指北首页行动清单统计：构建期生成；实习开放数口径=模块 statusOf 的 opening（不含全年滚动）。
  * 2026-11-05 重算：按 intern/js/app.js 的 parseWindow/companyStatus 对 data.plain.js 逐家计算，
- * 结果 open=247、rolling=791（10-31 版本为 253/787，自然过期与转滚动导致）。
+ * 结果 open=247、rolling=791（10-31 版本为 253/787，自然过期与转滚动导致）；11-06 复核数值不变。
  * 「本周截止」只统计截止日为明确日期（含「日」或 ISO）且 ≤7 天的机构：2 家。
  * 不对齐模块内的模糊窗口口径——「约 10-11 月」「以当年公告为准」会被折算成月中，
  * 在月初会把上百家误算成 7 天内截止（11-05 实测该口径为 194 家），不适合作为首页口径。
@@ -10,4 +10,4 @@
  * 2027 浙江省考已发布（2026-11-05，招录 4511 名），职位表 xlsx 未导入，故岗位总数不变。
  * 国考过审：国家公务员局公告，2027 年度注册认证/网上报名/资格审查分别于 2026-10-23 18:00、
  * 10-24 18:00、10-26 18:00 结束，截至 10-26 18:00 通过资格审查 345 万人，竞争比约 97:1。 */
-window.HUB_STATS = {"generatedAt":"2026-11-05","gkSnapshot":"2026-11-05","internOpen":247,"internRolling":791,"internClosing7":2,"internTotal":1064,"gkStatDate":"2026-10-26","gkPassed":3450000,"ky2027":47,"kyTotal":211};
+window.HUB_STATS = {"generatedAt":"2026-11-06","gkSnapshot":"2026-11-05","internOpen":247,"internRolling":791,"internClosing7":2,"internTotal":1064,"gkStatDate":"2026-10-26","gkPassed":3450000,"ky2027":47,"kyTotal":211};
