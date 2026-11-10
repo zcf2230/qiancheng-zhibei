@@ -17,7 +17,8 @@ const EXAM_FILES = {
   '山东省考': ['shandong2026.json', 'shandong2026_b.json', 'shandong2026_c.json', 'shandong2026_d.json'],
   '上海市考': ['shanghai2026.json', 'shanghai2026_b.json'],
   '江苏省考': ['jiangsu2027.json'], '广东省考': ['guangdong2027.json'], '北京市考': ['beijing2027.json'], '福建省考': ['fujian2026.json'], '安徽省考': ['anhui2026.json'],
-  '湖南省考': ['hunan2026.json'], '湖北省考': ['hubei2026.json'], '四川省考': ['sichuan2027.json'], '重庆市考': ['chongqing2026.json'], '天津市考': ['tianjin2027.json'], '江西省考': ['jiangxi2026.json']
+  '湖南省考': ['hunan2026.json'], '湖北省考': ['hubei2026.json'], '四川省考': ['sichuan2027.json'], '重庆市考': ['chongqing2026.json'], '天津市考': ['tianjin2027.json'], '江西省考': ['jiangxi2026.json'],
+  '河南省考': ['henan2026.json'], '河北省考': ['hebei2026.json']
 };
 const fileCache = new Map();
 function checkedExams() {
@@ -104,7 +105,9 @@ const EXAM_CLS = {
   '四川省考': 'exam-sichuan',
   '重庆市考': 'exam-chongqing',
   '天津市考': 'exam-tianjin',
-  '江西省考': 'exam-jiangxi'
+  '江西省考': 'exam-jiangxi',
+  '河南省考': 'exam-henan',
+  '河北省考': 'exam-hebei'
 };
 const examCls = exam => `tag ${EXAM_CLS[exam] || 'gray'}`;
 const fmtNum = n => (n == null || isNaN(n)) ? '—' : Number(n).toLocaleString('zh-CN');
@@ -124,7 +127,9 @@ const PROV_CITIES = {
   '四川': ['成都', '自贡', '攀枝花', '泸州', '德阳', '绵阳', '广元', '遂宁', '内江', '乐山', '南充', '眉山', '宜宾', '广安', '达州', '雅安', '巴中', '资阳', '阿坝', '甘孜', '凉山'],
   '重庆': ['重庆'],
   '天津': ['天津'],
-  '江西': ['南昌', '景德镇', '萍乡', '九江', '新余', '鹰潭', '赣州', '吉安', '宜春', '抚州', '上饶']
+  '江西': ['南昌', '景德镇', '萍乡', '九江', '新余', '鹰潭', '赣州', '吉安', '宜春', '抚州', '上饶'],
+  '河南': ['郑州', '开封', '洛阳', '平顶山', '安阳', '鹤壁', '新乡', '焦作', '濮阳', '许昌', '漯河', '三门峡', '南阳', '商丘', '信阳', '周口', '驻马店', '济源'],
+  '河北': ['石家庄', '唐山', '秦皇岛', '邯郸', '邢台', '保定', '张家口', '承德', '沧州', '廊坊', '衡水']
 };
 const PROVINCES = [...Object.keys(PROV_CITIES), '北京', '天津', '重庆', '河北', '山西', '内蒙古', '辽宁', '吉林', '黑龙江', '江苏', '安徽', '福建', '江西', '河南', '湖北', '湖南', '广东', '广西', '海南', '四川', '贵州', '云南', '西藏', '陕西', '甘肃', '青海', '宁夏', '新疆'];
 const ALL_CITIES = Object.values(PROV_CITIES).flat();

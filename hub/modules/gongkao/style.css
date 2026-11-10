@@ -403,6 +403,8 @@ a.srclink:hover { color: var(--forest); text-decoration: underline; }
 .tag.exam-chongqing { background: #f8e8f0; color: #7a1f4a; }
 .tag.exam-tianjin { background: #e8f8f0; color: #145a3a; }
 .tag.exam-jiangxi { background: #eef8e8; color: #3a5a14; }
+.tag.exam-henan { background: #f8f0e0; color: #6e4a13; }
+.tag.exam-hebei { background: #e8f0f8; color: #1f4679; }
 .tag.gray { background: #f2f1ec; color: var(--ink-3); }
 .tag.warn { background: var(--warn-soft); color: var(--warn); }
 .tag.ok { background: var(--ok-soft); color: var(--ok); }
@@ -668,6 +670,8 @@ html[data-theme="dark"] .tag.exam-sichuan { background: #3a2410; color: #f0a860;
 html[data-theme="dark"] .tag.exam-chongqing { background: #38142a; color: #f08ab8; }
 html[data-theme="dark"] .tag.exam-tianjin { background: #123528; color: #6fd4a4; }
 html[data-theme="dark"] .tag.exam-jiangxi { background: #243510; color: #b8e870; }
+html[data-theme="dark"] .tag.exam-henan { background: #352a10; color: #e8c070; }
+html[data-theme="dark"] .tag.exam-hebei { background: #16243c; color: #7fa8e8; }
 html[data-theme="dark"] .tag.gray { background: #2a2e35; color: var(--ink-3); }
 html[data-theme="dark"] .tag.ok { background: var(--ok-soft); color: var(--ok); }
 html[data-theme="dark"] .tag.warn { background: var(--warn-soft); color: var(--warn); }
