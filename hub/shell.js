@@ -303,7 +303,7 @@
         '<figure class="fp-photo" data-ui><img src="assets/ui/ui-kaoyan.png" alt="考研择校模块真实界面：院校列表、筛选与冲稳保分档" width="800" height="520" loading="eager" decoding="async"><figcaption>考研择校 · 院校列表与分档（站内真实界面）</figcaption></figure>' +
         '<aside class="fp-rail">' +
           '<div class="fp-stat"><b data-n="211">0</b><span>所金融考研院校</span></div>' +
-          '<div class="fp-stat"><b data-n="47197">0</b><span>个考公岗位</span></div>' +
+          '<div class="fp-stat"><b data-n="48890">0</b><span>个考公岗位</span></div>' +
           '<div class="fp-stat"><b data-n="1064">0</b><span>家实习机构</span></div>' +
           '<div class="fp-stat"><b data-n="40">0</b><span>个时间线节点</span></div>' +
         '</aside>' +
@@ -867,7 +867,7 @@
     var q0 = decodeURIComponent((query.match(/q=([^&]*)/) || [])[1] || '');
     el.innerHTML =
       '<div class="page-head"><div class="page-kicker">Search</div><h2 class="page-title">全局搜索</h2>' +
-      '<p class="page-sub">一个搜索框同时命中考研院校、考公岗位与实习机构，共 48,472 条索引；点击结果直达模块并自动定位。</p></div>' +
+      '<p class="page-sub">一个搜索框同时命中考研院校、考公岗位与实习机构，共 50,165 条索引；点击结果直达模块并自动定位。</p></div>' +
       '<div class="palette"><input id="searchInput" type="search" placeholder="搜院校 / 招录机关 / 职位 / 公司，如：北大 税务局 中信" value="' + esc(q0) + '"><kbd>ESC 清空</kbd></div>' +
       '<div id="searchResults" aria-live="polite"></div>';
     var input = el.querySelector('#searchInput');
@@ -977,7 +977,7 @@
     var meta = MODULE_META[name];
     var stat = '';
     if (name === 'kaoyan') stat = '211 所院校 · 2027 简章已核对';
-    else if (name === 'gongkao') stat = '47,197 个岗位 · 快照 ' + (st.gkSnapshot || st.generatedAt || '');
+    else if (name === 'gongkao') stat = '48,890 个岗位 · 快照 ' + (st.gkSnapshot || st.generatedAt || '');
     else if (name === 'intern') stat = (st.internOpen || 0) + ' 家开放中' + (st.internClosing7 ? ' · 本周截止 ' + st.internClosing7 + ' 家' : '');
     return '<div class="module-bar"><button class="menu-btn" type="button" aria-label="打开导航菜单">☰</button><span class="dot"></span><b>' + meta.name + '</b><span class="stat">' + esc(stat) + '</span>' +
       '<button class="fs-btn" type="button" aria-pressed="false">全屏</button>' +
