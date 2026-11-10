@@ -8,10 +8,20 @@
  *   ⑤ 无 ipcRenderer（自动更新器是桌面主进程能力）
  */
 const DATA_DIR = 'data/';
-// 顺序即优先级：同名考试以先出现的文件为主（overallStats/timeline/examStructure），positions 追加
-// 注意：shanghai2026_b.json 目前尚未创建（上海数据待补齐），loadBuiltins 会记为 missing 而非报错；
-//       补齐该文件后无需改代码即可自动生效。
-const BUILTIN_FILES = ['zhejiangxuandiao2027.json', 'zhejiang2027.json', 'guokao2027.json', 'guokao2026.json', 'guokao2026_b.json', 'guokao2026_c.json', 'zhejiang2026.json', 'zhejiang2026_b.json', 'shandong2026.json', 'shandong2026_b.json', 'shandong2026_c.json', 'shandong2026_d.json', 'shanghai2026.json', 'shanghai2026_b.json'];
+// 懒加载：按「考试」组织数据文件，只下载当前勾选考试的文件；勾选新考试时按需补载。
+// 每个考试内顺序即优先级（先出现的文件为主，positions 追加）。新增省份只需往对应数组补文件名。
+const EXAM_FILES = {
+  '国考': ['guokao2027.json', 'guokao2026.json', 'guokao2026_b.json', 'guokao2026_c.json'],
+  '浙江选调': ['zhejiangxuandiao2027.json'],
+  '浙江省考': ['zhejiang2027.json', 'zhejiang2026.json', 'zhejiang2026_b.json'],
+  '山东省考': ['shandong2026.json', 'shandong2026_b.json', 'shandong2026_c.json', 'shandong2026_d.json'],
+  '上海市考': ['shanghai2026.json', 'shanghai2026_b.json'],
+  '江苏省考': ['jiangsu2027.json'], '广东省考': ['guangdong2027.json'], '北京市考': ['beijing2027.json'], '福建省考': ['fujian2026.json'], '安徽省考': []
+};
+const fileCache = new Map();
+function checkedExams() {
+  return [...document.querySelectorAll('#examChecks input:checked')].map(x => x.value).filter(v => EXAM_FILES[v]);
+}
 const KOUBEI_FILE = DATA_DIR + 'koubei.json';
 const CUSTOM_FILE = DATA_DIR + 'custom_imports.json';
 const LS_CUSTOM_KEY = 'gongkao.custom_imports';
@@ -82,7 +92,12 @@ const EXAM_CLS = {
   '浙江选调': 'exam-xuandiao',
   '浙江省考': 'exam-zhejiang',
   '山东省考': 'exam-shandong',
-  '上海市考': 'exam-shanghai'
+  '上海市考': 'exam-shanghai',
+  '江苏省考': 'exam-jiangsu',
+  '广东省考': 'exam-guangdong',
+  '北京市考': 'exam-beijing',
+  '福建省考': 'exam-fujian',
+  '安徽省考': 'exam-anhui'
 };
 const examCls = exam => `tag ${EXAM_CLS[exam] || 'gray'}`;
 const fmtNum = n => (n == null || isNaN(n)) ? '—' : Number(n).toLocaleString('zh-CN');
@@ -91,7 +106,12 @@ const fmtNum = n => (n == null || isNaN(n)) ? '—' : Number(n).toLocaleString('
 const PROV_CITIES = {
   '浙江': ['杭州', '宁波', '温州', '嘉兴', '湖州', '绍兴', '金华', '衢州', '舟山', '台州', '丽水'],
   '山东': ['济南', '青岛', '淄博', '枣庄', '东营', '烟台', '潍坊', '济宁', '泰安', '威海', '日照', '临沂', '德州', '聊城', '滨州', '菏泽'],
-  '上海': ['上海']
+  '上海': ['上海'],
+  '江苏': ['南京', '无锡', '徐州', '常州', '苏州', '南通', '连云港', '淮安', '盐城', '扬州', '镇江', '泰州', '宿迁'],
+  '广东': ['广州', '深圳', '珠海', '汕头', '佛山', '韶关', '湛江', '肇庆', '江门', '茂名', '惠州', '梅州', '汕尾', '河源', '阳江', '清远', '东莞', '中山', '潮州', '揭阳', '云浮'],
+  '北京': ['北京'],
+  '福建': ['福州', '厦门', '莆田', '三明', '泉州', '漳州', '南平', '龙岩', '宁德'],
+  '安徽': ['合肥', '芜湖', '蚌埠', '淮南', '马鞍山', '淮北', '铜陵', '安庆', '黄山', '滁州', '阜阳', '宿州', '六安', '亳州', '池州', '宣城']
 };
 const PROVINCES = [...Object.keys(PROV_CITIES), '北京', '天津', '重庆', '河北', '山西', '内蒙古', '辽宁', '吉林', '黑龙江', '江苏', '安徽', '福建', '江西', '河南', '湖北', '湖南', '广东', '广西', '海南', '四川', '贵州', '云南', '西藏', '陕西', '甘肃', '青海', '宁夏', '新疆'];
 const ALL_CITIES = Object.values(PROV_CITIES).flat();
@@ -160,13 +180,17 @@ function parseRange(s) {
 }
 
 /* ---------------- 数据加载 ---------------- */
-async function loadBuiltins() {
+async function loadBuiltins(exams) {
   loadIssues = [];
-  const raws = [];
-  const results = await Promise.all(BUILTIN_FILES.map(async f => {
+  const list = exams || checkedExams();
+  const wanted = [];
+  list.forEach(e => (EXAM_FILES[e] || []).forEach(f => { if (!wanted.includes(f)) wanted.push(f); }));
+  const results = await Promise.all(wanted.map(async f => {
+    if (fileCache.has(f)) return fileCache.get(f);
     try {
       const d = await readJson(DATA_DIR + f);
       d._file = f;
+      fileCache.set(f, d);
       return d;
     } catch (e) {
       // 绝不静默吞掉：JSON 写坏会让整份数据凭空消失，必须让用户看见
@@ -176,7 +200,7 @@ async function loadBuiltins() {
       return null;
     }
   }));
-  raws.push(...results.filter(Boolean));
+  const raws = results.filter(Boolean);
   dataUpdatedAt = new Date(DATA_UPDATED_AT);
 
   // 同名考试同年份合并：以先出现的文件为主（overallStats/timeline 取主文件），positions 追加去重；不同年度（如国考2027）作为独立数据集展示
@@ -186,10 +210,11 @@ async function loadBuiltins() {
     const key = d.exam + '|' + d.year;
     if (byExam.has(key)) {
       const main = byExam.get(key);
-      main.positions = (main.positions || []).concat(d.positions || []);
+      main.positions = main.positions.concat(d.positions || []);
       if (d.cityStats) main.cityStats = (main.cityStats || []).concat(d.cityStats);
     } else {
-      byExam.set(key, d);
+      // 拷贝一份再合并：fileCache 缓存的是原始对象，直接 concat 会污染缓存，二次加载时重复累加
+      byExam.set(key, { ...d, positions: [...(d.positions || [])], cityStats: d.cityStats ? [...d.cityStats] : d.cityStats });
     }
   }
   datasets = [...byExam.values()];
@@ -1175,6 +1200,13 @@ function bindEvents() {
     el.addEventListener('change', () => { syncSortHeaders(); renderResults(); saveLastFilters(); });
     if (el.type === 'text') el.addEventListener('keydown', ev => { if (ev.key === 'Enter') renderResults(); });
   });
+  // 懒加载：勾选新考试时按需补载该考试的数据文件，再整体刷新
+  document.getElementById('examChecks').addEventListener('change', async () => {
+    await loadBuiltins();
+    fillRegionSelect();
+    renderResults(); renderAnalysis(); renderPrep(); renderDataSummary(); updateShell();
+    saveLastFilters();
+  });
   document.getElementById('btnReset').onclick = () => {
     applyFilterDefaults();
     renderResults();
@@ -1451,14 +1483,14 @@ function updateShell() {
 }
 
 async function bootstrap(first) {
-  await loadBuiltins();
-  fillRegionSelect();
-  // P4：开关打开时恢复上次筛选；否则恢复出厂默认（applyFilterDefaults 同时服务「重置条件」）
+  // P4：先恢复筛选（决定要懒加载哪些考试），再加载数据
   if (first) {
     if (!(loadLS('gk_keep_filters', false) && applySavedFilters(loadLS('gk_last_filters', null)))) {
       applyFilterDefaults();
     }
   }
+  await loadBuiltins();
+  fillRegionSelect();
   syncSortHeaders();
   renderResults();
   renderAnalysis();
