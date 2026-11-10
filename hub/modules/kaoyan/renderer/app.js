@@ -55,7 +55,30 @@ const MAJORS = {
   mib:  { label: '国际商务',        z: '国际商务专硕',       x: '国际贸易学硕',     zCode: '0254',   xCode: '0202', cat: '经济学', dir: 'mib/', math: [['数学三', '考数三'], ['396', '考396']] },
   mpacc:{ label: '会计MPAcc',       z: '会计专硕',           x: '会计学硕',         zCode: '1253',   xCode: '1202', cat: '管理学', dir: 'mpacc/',math: [] },
   edu:  { label: '教育',            z: '教育专硕',           x: '教育学硕',         zCode: '0451',   xCode: '0401', cat: '教育学', dir: 'edu/', math: [] },
-  jmc:  { label: '新闻与传播',      z: '新传专硕',           x: '新闻传播学硕',     zCode: '0552',   xCode: '0503', cat: '文学',   dir: 'jmc/', math: [] }
+  jmc:  { label: '新闻与传播',      z: '新传专硕',           x: '新闻传播学硕',     zCode: '0552',   xCode: '0503', cat: '文学',   dir: 'jmc/', math: [] },
+  phil: { label: '哲学', z: '哲学专硕', x: '哲学学硕', zCode: '0101', xCode: '0101', cat: '哲学', dir: 'phil/', math: [] },
+  hist: { label: '历史学', z: '历史学专硕', x: '历史学学硕', zCode: '0651', xCode: '0602', cat: '历史学', dir: 'hist/', math: [] },
+  sci:  { label: '理学(数理化生)', z: '理学专硕', x: '理学学硕', zCode: '0701', xCode: '0701', cat: '理学', dir: 'sci/', math: [] },
+  agr:  { label: '农学', z: '农学专硕', x: '农学学硕', zCode: '0951', xCode: '0901', cat: '农学', dir: 'agr/', math: [] },
+  med:  { label: '临床医学', z: '临床医学专硕', x: '临床医学学硕', zCode: '1051', xCode: '1002', cat: '医学', dir: 'med/', math: [] },
+  nur:  { label: '护理', z: '护理专硕', x: '护理学硕', zCode: '1054', xCode: '1011', cat: '医学', dir: 'nur/', math: [] },
+  pharm:{ label: '药学', z: '药学专硕', x: '药学学硕', zCode: '1055', xCode: '1007', cat: '医学', dir: 'pharm/', math: [] },
+  art:  { label: '艺术(音乐/美术/设计)', z: '艺术专硕', x: '艺术学硕', zCode: '1352', xCode: '1301', cat: '艺术学', dir: 'art/', math: [] },
+  mba:  { label: '工商管理MBA', z: 'MBA专硕', x: '', zCode: '1251', xCode: '', cat: '管理学', dir: 'mba/', math: [] },
+  mpa:  { label: '公共管理MPA', z: 'MPA专硕', x: '', zCode: '1252', xCode: '', cat: '管理学', dir: 'mpa/', math: [] },
+  mem:  { label: '工程管理MEM', z: 'MEM专硕', x: '', zCode: '1256', xCode: '', cat: '管理学', dir: 'mem/', math: [] },
+  mlis: { label: '图书情报', z: '图书情报专硕', x: '', zCode: '1255', xCode: '', cat: '管理学', dir: 'mlis/', math: [] },
+  tax:  { label: '税务', z: '税务专硕', x: '税务学硕', zCode: '0253', xCode: '0202', cat: '经济学', dir: 'tax/', math: [['数学三', '考数三'], ['396', '考396']] },
+  ins:  { label: '保险', z: '保险专硕', x: '保险学硕', zCode: '0255', xCode: '0202', cat: '经济学', dir: 'ins/', math: [['数学三', '考数三'], ['396', '考396']] },
+  mv:   { label: '资产评估', z: '资产评估专硕', x: '资产评估学硕', zCode: '0256', xCode: '0202', cat: '经济学', dir: 'mv/', math: [['数学三', '考数三'], ['396', '考396']] },
+  ee:   { label: '电气工程', z: '电气专硕', x: '电气学硕', zCode: '085801', xCode: '0808', cat: '工学', dir: 'ee/', math: [['数学一', '考数一']] },
+  me:   { label: '机械', z: '机械专硕', x: '机械学硕', zCode: '0855', xCode: '0802', cat: '工学', dir: 'me/', math: [['数学一', '考数一']] },
+  ce:   { label: '土木水利', z: '土木水利专硕', x: '土木学硕', zCode: '0859', xCode: '0814', cat: '工学', dir: 'ce/', math: [['数学一', '考数一']] },
+  se:   { label: '软件工程', z: '软件专硕', x: '软件学硕', zCode: '085405', xCode: '0835', cat: '工学', dir: 'se/', math: [['数学一', '考数一'], ['408', '考408']] },
+  mti:  { label: '翻译硕士', z: '翻译专硕', x: '翻译学硕', zCode: '0551', xCode: '0502', cat: '文学', dir: 'mti/', math: [] },
+  cll:  { label: '中国语言文学', z: '中文专硕', x: '中国语言文学学硕', zCode: '0501', xCode: '0501', cat: '文学', dir: 'cll/', math: [] },
+  psy:  { label: '应用心理', z: '应用心理专硕', x: '心理学学硕', zCode: '0454', xCode: '0402', cat: '教育学', dir: 'psy/', math: [] },
+  soc:  { label: '社会学/政治学/马克思', z: '社会学专硕', x: '社会学学硕', zCode: '0303', xCode: '0303', cat: '法学', dir: 'soc/', math: [] }
 };
 let CUR_MAJOR = 'fin';
 const majorCfg = () => MAJORS[CUR_MAJOR] || MAJORS.fin;
@@ -940,7 +963,10 @@ async function init() {
   // 专业大类选择器（方案A）
   const fm = $('#fMajor');
   if (fm) {
-    fm.innerHTML = Object.entries(MAJORS).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('');
+    const groups = {};
+    for (const [k, v] of Object.entries(MAJORS)) (groups[v.cat] = groups[v.cat] || []).push([k, v]);
+    fm.innerHTML = Object.entries(groups).map(([cat, arr]) =>
+      `<optgroup label="${cat}">` + arr.map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('') + '</optgroup>').join('');
     fm.value = CUR_MAJOR;
     fm.addEventListener('change', async () => {
       CUR_MAJOR = fm.value; CMP = [];
