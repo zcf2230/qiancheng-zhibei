@@ -45,22 +45,53 @@ let CMP = [];                  // 待对比院校 id
 let VIEW = 'query';
 let SCORE = null;              // 分数匹配：用户输入的预估总分
 
+/* ---------- 多专业大类（方案A）：每个大类独立数据目录，金融保持默认 ---------- */
+const DATA_VERSION = 2;
+const MAJORS = {
+  fin:  { label: '金融',           z: '金融专硕',           x: '金融学硕',         zCode: '0251',   xCode: '0202', cat: '经济学', dir: '',     math: [['396', '考396经综'], ['数学三', '考数学三']] },
+  cs:   { label: '计算机/电子信息', z: '计算机专硕',         x: '计算机学硕',       zCode: '0854',   xCode: '0812', cat: '工学',   dir: 'cs/',  math: [['数学一', '考数一'], ['数学二', '考数二'], ['408', '考408']] },
+  law:  { label: '法律(非法学)',    z: '法律专硕(非法学)',   x: '',                 zCode: '035101', xCode: '',     cat: '法学',   dir: 'law/', math: [] },
+  stat: { label: '应用统计',        z: '应用统计专硕',       x: '统计学硕',         zCode: '0252',   xCode: '0714', cat: '经济学', dir: 'stat/',math: [['数学三', '考数三']] },
+  mib:  { label: '国际商务',        z: '国际商务专硕',       x: '国际贸易学硕',     zCode: '0254',   xCode: '0202', cat: '经济学', dir: 'mib/', math: [['数学三', '考数三'], ['396', '考396']] }
+};
+let CUR_MAJOR = 'fin';
+const majorCfg = () => MAJORS[CUR_MAJOR] || MAJORS.fin;
+const progName = key => key === 'z' ? (majorCfg().z || majorCfg().label + '专硕') : (majorCfg().x || majorCfg().label + '学硕');
+const progCodeName = key => { const c = key === 'z' ? majorCfg().zCode : majorCfg().xCode; return progName(key) + (c ? `（${c}）` : ''); };
+const noFinText = () => `未查到${majorCfg().label}硕士招生`;
+function rebuildMajorUI() {
+  const fp = $('#fProgram'); const cur = fp.value;
+  fp.innerHTML = `<option value="z">${progName('z')}</option>` + (majorCfg().x ? `<option value="x">${progName('x')}</option>` : '') + `<option value="">两者都看</option>`;
+  fp.value = [...fp.options].some(o => o.value === cur) ? cur : 'z';
+  const fs2 = $('#fMath'); const mv = fs2.value;
+  fs2.innerHTML = '<option value="">初试科目不限</option>' + majorCfg().math.map(([v, l]) => `<option value="${v}">${l}</option>`).join('');
+  fs2.value = [...fs2.options].some(o => o.value === mv) ? mv : '';
+}
+const matchMath = (m, val) => val === '396' ? m.includes('396')
+  : val === '数学三' ? (m.includes('303') || m.includes('数学三') || m.includes('数三'))
+  : m.includes(val);
+
 /* ---------- 兼容浏览器调试（无 Electron 环境时用 fetch + localStorage 模拟） ---------- */
 function getApi() {
   if (window.api) return window.api;
-  const KEY = 'mock-kaoyan-data';
+  const KEY = 'mock-kaoyan-data::' + CUR_MAJOR;
   const seed = async () => {
-    // 单文件版（tools/build-web.js 生成）会把整份数据内联到 window.__KAOYAN_DATA__，
-    // 省掉 5 次网络请求——对境外链路来说，少一次往返比少几 KB 重要得多。
-    if (window.__KAOYAN_DATA__) return JSON.parse(JSON.stringify(window.__KAOYAN_DATA__));
-    const n = await (await fetch('../data/national.json')).json();
-    const parts = await Promise.all([1, 2, 3, 4].map(i => fetch(`../data/batch${i}.json`).then(r => r.json())));
-    return { version: 1, national: n, schools: [].concat(...parts) };
+    if (window.__KAOYAN_DATA__ && CUR_MAJOR === 'fin') return JSON.parse(JSON.stringify(window.__KAOYAN_DATA__));
+    const dir = majorCfg().dir;
+    const n = await (await fetch(`../data/${dir}national.json`)).json();
+    let schools;
+    if (!dir) {
+      const parts = await Promise.all([1, 2, 3, 4].map(i => fetch(`../data/batch${i}.json`).then(r => r.json())));
+      schools = [].concat(...parts);
+    } else {
+      schools = await (await fetch(`../data/${dir}schools.json`)).json();
+    }
+    return { version: DATA_VERSION, national: n, schools };
   };
   return {
     loadData: async () => {
       const s = localStorage.getItem(KEY);
-      if (s) return JSON.parse(s);
+      if (s) { const d = JSON.parse(s); if (d.version === DATA_VERSION) return d; }
       const d = await seed();
       localStorage.setItem(KEY, JSON.stringify(d));
       return d;
@@ -252,7 +283,7 @@ function lineCell(p) {
 }
 function progRow(sch, key) {
   const p = sch[key] || {};
-  const name = key === 'z' ? '金融专硕' : '金融学硕';
+  const name = progName(key);
   const math = p.m ? esc(p.m) : '<span class="muted">待核实</span>';
   // 报录比需要「录取人数」和「报名人数」同时有值才算得出来，绝大多数院校不公布报名人数，
   // 所以这一格通常是「—」。不再重复显示"报名—"这类无信息量的字。
@@ -287,15 +318,7 @@ function filteredSchools() {
     if (kw && !(s.name.toLowerCase().includes(kw) || (s.city || '').toLowerCase().includes(kw))) return false;
     if (math) {
       const p = s[progKey] || {};
-      const m = p.m || '';
-      // ⚠️ 不能用 m.includes('数三') 判「考数学三」：值是「303数学三」，字符是 数+学+三，
-      // 不含连续的「数三」子串——这曾导致「考数学三」筛选命中 0 所（应为 113 所）。
-      // 但「数三或396（分学院）」这个复合值里确实含连续的「数三」，所以三种写法都要覆盖：
-      // 这样复合值在「考数学三」和「考396」两个筛选里都能命中（分学院两种都考）。
-      const is396 = m.includes('396');
-      const isMath3 = m.includes('303') || m.includes('数学三') || m.includes('数三');
-      if (math === '396') { if (!is396) return false; }
-      else if (math === '数三') { if (!isMath3) return false; }
+      if (!matchMath(p.m || '', math)) return false;
     }
     if (complete) {
       const p = s[progKey] || {};
@@ -340,7 +363,7 @@ function schoolCardHtml(s, pk, progs) {
   return `<div class="school ${tier} ${s.noFinance ? 'nofin' : ''}" data-id="${s.id}">
     <div class="school-head" onclick="openDetail('${s.id}')">
       <span class="school-name">${esc(s.name)}</span>${tagHtml(s.tags)}
-      ${s.noFinance ? '<span class="badge-nofin">未查到金融硕士招生</span>' : ''}
+      ${s.noFinance ? `<span class="badge-nofin">${noFinText()}</span>` : ''}
       <span class="school-city">${esc(s.city || s.prov)}</span>
       ${m ? `<span class="match-badge ${m.cls}" title="预估分与复试线相差 ${m.diff > 0 ? '+' : ''}${m.diff} 分">${m.label} ${m.diff > 0 ? '+' : ''}${m.diff}</span>` : ''}
       <button style="margin-left:auto" onclick="toggleCmp('${s.id}')">${CMP.includes(s.id) ? '✓ 已选对比' : '± 对比'}</button>
@@ -376,7 +399,7 @@ function exportFavCsv() {
     (s.x && s.x.l) ? Object.entries(s.x.l).sort((a, b) => b[0] - a[0])[0].join('年：') : '',
     (s.z || s.x || {}).f || '', s.note || ''
   ]));
-  downloadFile('金融考研择校-我的收藏.csv', toCsv(rows), 'text/csv;charset=utf-8');
+  downloadFile(`${majorCfg().label}考研择校-我的收藏.csv`, toCsv(rows), 'text/csv;charset=utf-8');
   toast(`已导出 ${list.length} 所收藏`);
 }
 
@@ -406,7 +429,7 @@ function exportCurrentCsv() {
   const progKey = $('#fProgram').value || 'z';
   const list = filteredSchools();
   if (!list.length) { toast('当前没有可导出的院校'); return; }
-  const pn = progKey === 'z' ? '金融专硕' : '金融学硕';
+  const pn = progName(progKey);
   const rows = [[
     '省份', '城市', '院校', '层次', '数据年份',
     pn + '复试线', '复试线年份', '录取人数', '报录比', '学费', '学制',
@@ -424,7 +447,7 @@ function exportCurrentCsv() {
       (s.sources || []).join(' ')
     ]);
   }
-  downloadFile(`金融考研择校-${pn}-${list.length}所.csv`, toCsv(rows), 'text/csv;charset=utf-8');
+  downloadFile(`${majorCfg().label}考研择校-${pn}-${list.length}所.csv`, toCsv(rows), 'text/csv;charset=utf-8');
   toast(`已导出 ${list.length} 所院校`);
 }
 
@@ -476,7 +499,7 @@ function yearsBoxes(p) {
 }
 function detailSec(sch, key) {
   const p = sch[key] || {};
-  const nm = key === 'z' ? '金融专硕（0251）' : '金融学硕（0202 应用经济学）';
+  const nm = progCodeName(key);
   // 学费若按年收，补一个全程估算，方便和「万/全程」的院校横向比
   const feeCell = p.f
     ? esc(p.f) + (feeIsPerYear(p)
@@ -501,11 +524,11 @@ function detailSec(sch, key) {
 function openDetail(id) {
   const s = byId(id);
   if (!s) return;
-  const q = encodeURIComponent(`${s.name} 研究生院 金融专硕 复试分数线 招生简章`);
+  const q = encodeURIComponent(`${s.name} 研究生院 ${majorCfg().label}专硕 复试分数线 招生简章`);
   $('#detailModal').innerHTML = `
     <h3>${esc(s.name)} ${tagHtml(s.tags)} <button class="close-x" onclick="closeModal('detailMask')">✕</button></h3>
     <p class="muted" style="margin-bottom:14px">${esc(s.prov)} · ${esc(s.city || s.prov)}　|　数据参考年份：${esc(s.y || '—')}（整理自公开资料，务必核实）</p>
-    ${s.noFinance ? `<div class="alert">⚠️ 本次核查未在 2026 年招生专业目录中找到该校的金融硕士（0251 / 0202）招生信息。请以研招网最新目录为准，不要据此排除该校。</div>` : ''}
+    ${s.noFinance ? `<div class="alert">⚠️ 本次核查未在招生专业目录中找到该校的${majorCfg().label}硕士招生信息。请以研招网最新目录为准，不要据此排除该校。</div>` : ''}
     ${s.z ? detailSec(s, 'z') : ''}
     ${s.x ? detailSec(s, 'x') : ''}
     ${s.note ? `<div class="detail-sec"><h4>综合备注</h4><p class="muted">${esc(s.note)}</p></div>` : ''}
@@ -570,11 +593,11 @@ function field(label, inner, full) {
   return `<div class="field ${full ? 'full' : ''}"><label>${label}</label>${inner}</div>`;
 }
 function progForm(key, p) {
-  const nm = key === 'z' ? '金融专硕（0251）' : '金融学硕（0202）';
+  const nm = progCodeName(key);
   const v = k => esc((p && p[k]) || '');
   const mathSel = v('m');
   const opt = (val, cur) => `<option value="${val}" ${val === cur ? 'selected' : ''}>${val}</option>`;
-  const mathOptions = ['303数学三', '396经济类综合', '数三或396（分学院）', '不考数学', '待核实']
+  const mathOptions = ['不考数学', '待核实'].concat(majorCfg().math.map(m => m[1] === '考396经综' ? '396经济类综合' : m[1] === '考数学三' ? '303数学三' : m[1]))
     .map(o => opt(o, mathSel)).join('');
   const lineInputs = YEARS.map(y =>
     field(`${y} 年复试线`, `<input type="number" data-p="${key}" data-k="l_${y}" value="${p && p.l && p.l[y] ? p.l[y] : ''}" placeholder="${y > new Date().getFullYear() ? '尚未公布' : '空=未收录'}">`)
@@ -753,7 +776,7 @@ function openCompare() {
   const legend = schools.map((s, i) =>
     `<span class="li"><em style="background:var(--radar-${i % 4 + 1})"></em>${esc(s.name)}</span>`).join('');
   $('#compareModal').innerHTML = `
-    <h3>院校对比（${progKey === 'z' ? '金融专硕' : '金融学硕'}） <button class="close-x" onclick="closeModal('compareMask')">✕</button></h3>
+    <h3>院校对比（${progName(progKey)}） <button class="close-x" onclick="closeModal('compareMask')">✕</button></h3>
     <div class="toolbar">
       <button class="mini" onclick="exportCompare()">导出 CSV</button>
       <button class="mini" onclick="window.print()">打印 / 存 PDF</button>
@@ -777,7 +800,7 @@ function exportCompare() {
   const defs = compareRows(schools, progKey);
   const rows = [['对比项', ...schools.map(s => s.name)]]
     .concat(defs.map(([label, fn]) => [label, ...schools.map(fn)]));
-  downloadFile(`院校对比-${progKey === 'z' ? '金融专硕' : '金融学硕'}.csv`, toCsv(rows), 'text/csv;charset=utf-8');
+  downloadFile(`院校对比-${progName(progKey)}.csv`, toCsv(rows), 'text/csv;charset=utf-8');
   toast('已导出 CSV');
 }
 
@@ -832,7 +855,7 @@ function buildReport() {
   const kw = $('#fSearch').value.trim(); if (kw) condParts.push(`关键词「${kw}」`);
   if ($('#fProv').value) condParts.push(`省份：${$('#fProv').value}`);
   if ($('#fTag').value) condParts.push(`层次：${$('#fTag').value}`);
-  if ($('#fMath').value) condParts.push(`数学：${$('#fMath').value === '396' ? '396 经综' : '数学三'}`);
+  if ($('#fMath').value) condParts.push(`初试科目：${$('#fMath').selectedOptions[0].textContent}`);
   if ($('#fComplete') && $('#fComplete').value) condParts.push(`资料：${$('#fComplete').selectedOptions[0].textContent}`);
   const conds = condParts.join('；') || '全部院校';
 
@@ -878,11 +901,11 @@ function buildReport() {
   </div>`;
 
   $('#report').innerHTML = `
-    <div class="r-title">金融考研择校报告</div>
-    <div class="r-sub">生成时间 ${dateStr} · ${progKey === 'z' ? '金融专硕（0251）' : '金融学硕（0202）'} · 数据版本 v${esc(String(DATA.version || '?'))}</div>
+    <div class="r-title">${majorCfg().label}考研择校报告</div>
+    <div class="r-sub">生成时间 ${dateStr} · ${progCodeName(progKey)} · 数据版本 v${esc(String(DATA.version || '?'))}</div>
     <div class="r-sec"><h3>筛选条件</h3><p class="r-note">${esc(conds)}${SCORE != null ? `；预估总分 <b>${SCORE}</b> 分` : ''}</p>${kpis}</div>
     ${body}${favSec}
-    <div class="r-foot">数据来源：研招网（yz.chsi.com.cn）、各院校研究生院官网、当年招生简章及公开报道，整理自「金融考研择校通」。<br>
+    <div class="r-foot">数据来源：研招网（yz.chsi.com.cn）、各院校研究生院官网、当年招生简章及公开报道，整理自「前程指北·考研择校」。<br>
     本报告仅供择校参考，不构成报考建议；复试线、学费、招生人数每年变化，报考前务必以研招网和目标院校当年招生简章为准。标记「—」表示公开渠道无可靠数据，本工具不编造数字。</div>`;
   document.body.classList.add('report-mode');
   try { window.print(); } catch (e) {}
@@ -910,6 +933,22 @@ async function init() {
     ), 800);
   }
   $('#fProv').innerHTML = '<option value="">全部省份</option>' + PROVS.map(p => `<option>${p}</option>`).join('');
+
+  // 专业大类选择器（方案A）
+  const fm = $('#fMajor');
+  if (fm) {
+    fm.innerHTML = Object.entries(MAJORS).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('');
+    fm.value = CUR_MAJOR;
+    fm.addEventListener('change', async () => {
+      CUR_MAJOR = fm.value; CMP = [];
+      DATA = await getApi().loadData();
+      rebuildMajorUI(); renderResults(); updateStat();
+      if (VIEW === 'national') renderNational();
+      if (VIEW === 'fav') renderFav();
+      toast('已切换：' + majorCfg().label);
+    });
+  }
+  rebuildMajorUI();
 
   document.querySelectorAll('.nav-btn').forEach(b => b.onclick = () => {
     document.querySelectorAll('.nav-btn').forEach(x => x.classList.remove('active'));
