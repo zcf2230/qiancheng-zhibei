@@ -1,5 +1,5 @@
 /* ============================================================
-   金融实习网申通 · 样式（v2 版式改版）
+   实习网申通 · 样式（v2 版式改版）
    设计取向：日报／期刊式的「纸感」版式 —— 暖白底色、青绿强调色、
    靠字重与字号拉层级、用极细分割线代替一层层白盒子。
    ⚠️ 类名与 HTML/JS 完全对应，改版只动视觉，不动结构语义。
@@ -160,6 +160,28 @@ button { font-family: inherit; cursor: pointer; }
 .chip.active { background: var(--blue); border-color: var(--blue); color: #fff; font-weight: 600; }
 .chip.active i, .chip.active b { color: rgba(255, 255, 255, .75); }
 
+/* 学科筛选：单独一块，先选学科再叠加行业/城市，和行业分类区分开 */
+.disc-panel {
+  display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap;
+  margin: 0 0 12px; padding: 11px 13px;
+  border: 1px dashed var(--line); border-radius: 12px;
+  background: linear-gradient(180deg, rgba(23, 107, 117, .045), transparent 72%);
+}
+.disc-label { font-size: 12px; color: var(--ink-3); line-height: 1.9; white-space: nowrap; }
+.disc-label b { color: var(--ink); font-weight: 700; letter-spacing: .2px; }
+.disc-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+.disc-panel .chip { padding: 4px 12px 4px 10px; }
+.disc-panel .chip[data-disc]::before {
+  content: ""; width: 7px; height: 7px; border-radius: 50%;
+  border: 1px solid var(--line); background: transparent; flex: 0 0 auto;
+}
+.disc-panel .chip.active::before { background: #fff; border-color: #fff; }
+html[data-theme="dark"] .disc-panel { background: linear-gradient(180deg, rgba(79, 179, 189, .07), transparent 72%); }
+/* 细分方向：依赖一个学科，未选中时整块隐藏 */
+.sub-panel { margin-top: -4px; padding: 9px 13px; }
+.sub-panel[hidden] { display: none; }
+.sub-panel .chip { padding: 3px 11px 3px 9px; }
+
 .filter-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .filter-row select {
   padding: 7px 11px; border: 1px solid var(--line); border-radius: 999px;
@@ -228,6 +250,7 @@ button { font-family: inherit; cursor: pointer; }
 .tag.conf-低 { background: var(--gray-soft); color: var(--ink-3); }
 .tag.verified { background: var(--green-soft); color: var(--green); }   /* 官网经程序实测可访问 */
 .tag.dead { background: var(--red-soft); color: var(--red); }          /* 每日巡检连续 3 天连不上 */
+.tag.disc { background: var(--gray-soft); color: var(--ink-2); }
 
 /* 状态：小圆点 + 文字，去掉彩色实底，视觉更安静 */
 .status-pill { font-size: 12px; font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; }
@@ -301,8 +324,8 @@ button { font-family: inherit; cursor: pointer; }
 
 /* ---------- 时间轴 ---------- */
 .hint { font-size: 13px; color: var(--ink-2); margin-bottom: 14px; }
-.timeline-controls { margin-bottom: 14px; }
-.timeline-controls select { padding: 7px 11px; border: 1px solid var(--line); border-radius: 999px; font-size: 13px; background: var(--card); }
+.timeline-controls { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.timeline-controls select { padding: 7px 11px; border: 1px solid var(--line); border-radius: 999px; font-size: 13px; background: var(--card); color: var(--ink); }
 .timeline-wrap { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; overflow-x: auto; }
 .tl-row {
   display: grid; grid-template-columns: 150px 1fr; align-items: center; min-height: 34px;
@@ -421,7 +444,10 @@ button { font-family: inherit; cursor: pointer; }
   body { font-size: 14px; }
   .filter-toggle { display: flex; }
   .filter-panel:not(.open) .filter-group,
+  .filter-panel:not(.open) .disc-panel,
   .filter-panel:not(.open) .filter-row { display: none; }
+  .disc-panel { padding: 10px 11px; }
+  .disc-label { white-space: normal; }
   .container { padding: 0 16px; }
   .site-header { padding-top: 20px; }
   .brand h1 { font-size: 26px; letter-spacing: -.5px; }

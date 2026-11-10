@@ -228,7 +228,7 @@
     });
     if (st.gkStatDate) out.push(['考公岗位', '国考过审 ' + (st.gkPassed || 0).toLocaleString('en-US') + ' 人（' + st.gkStatDate + '）']);
     if (st.ky2027) out.push(['考研择校', '2027 简章覆盖 ' + st.ky2027 + '/' + st.kyTotal + ' 所']);
-    out.push(['全局搜索', '17,819 条索引覆盖三条路']);
+    out.push(['全局搜索', '83,841 条索引覆盖三条路']);
     return out;
   }
 
@@ -303,8 +303,8 @@
         '<figure class="fp-photo" data-ui><img src="assets/ui/ui-kaoyan.png" alt="考研择校模块真实界面：院校列表、筛选与冲稳保分档" width="800" height="520" loading="eager" decoding="async"><figcaption>考研择校 · 院校列表与分档（站内真实界面）</figcaption></figure>' +
         '<aside class="fp-rail">' +
           '<div class="fp-stat"><b data-n="211">0</b><span>所金融院校 · 31 专业大类</span></div>' +
-          '<div class="fp-stat"><b data-n="79599">0</b><span>个考公岗位</span></div>' +
-          '<div class="fp-stat"><b data-n="1064">0</b><span>家实习机构</span></div>' +
+          '<div class="fp-stat"><b data-n="81182">0</b><span>个考公岗位</span></div>' +
+          '<div class="fp-stat"><b data-n="2448">0</b><span>家实习机构 · 12 个学科方向</span></div>' +
           '<div class="fp-stat"><b data-n="40">0</b><span>个时间线节点</span></div>' +
         '</aside>' +
       '</div></section>' +
@@ -328,13 +328,13 @@
       '<section class="section intern-band reveal"><div class="ib-grid">' +
         '<figure class="ib-photo" data-ui><img src="assets/ui/ui-intern.png" alt="实习网申模块真实界面：报头数据速览、批次筛选与公司库" width="800" height="520" loading="lazy" decoding="async"><figcaption>实习网申 · 批次与倒计时（站内真实界面）</figcaption></figure>' +
         '<div class="ib-copy"><div class="section-kicker">Intern</div><h2>截止日期撞在一起时，先投哪家比投得多更重要</h2>' +
-        '<p>' + esc(String(st.internOpen || 0)) + ' 家机构正在开放网申，' + esc(String(st.internClosing7 || 0)) + ' 家本周截止。按倒计时排好投递顺序，把最想去的放在最前面。</p>' +
+        '<p>' + esc(String(st.internOpen || 0)) + ' 家机构正在开放网申' + (st.internClosing7 ? '，' + esc(String(st.internClosing7)) + ' 家本周截止' : '') + '。按倒计时排好投递顺序，把最想去的放在最前面。</p>' +
         '<a class="btn btn-ghost magnet" href="#/intern">进入实习网申<span class="arr">→</span></a></div>' +
       '</div></section>' +
 
       '<section class="section reveal"><div class="section-head"><div><div class="section-kicker">How</div><h2>三步用起来</h2></div></div>' +
       '<div class="how-grid">' +
-        '<figure class="how-photo" data-ui><img src="assets/ui/ui-search.png" alt="全局搜索真实界面：一个搜索框同时命中院校、岗位与机构" width="800" height="520" loading="lazy" decoding="async"><figcaption>全局搜索 · 17,819 条索引一个框命中（站内真实界面）</figcaption></figure>' +
+        '<figure class="how-photo" data-ui><img src="assets/ui/ui-search.png" alt="全局搜索真实界面：一个搜索框同时命中院校、岗位与机构" width="800" height="520" loading="lazy" decoding="async"><figcaption>全局搜索 · 83,841 条索引一个框命中（站内真实界面）</figcaption></figure>' +
         '<ol class="how-steps">' +
           '<li><b>答十题</b><p>路径决策十题给出主推荐、维度理由与备选，结果可分享、可打印。</p></li>' +
           '<li><b>看窗口</b><p>统一时间线把三条路的关键节点对齐，确认本周该动手的事与剩余天数。</p></li>' +
@@ -345,8 +345,8 @@
       '<section class="section reveal"><div class="editorial">' +
         '<div class="ed-card"><div class="stamp">数据新鲜度</div><div class="fresh-grid">' +
           '<div class="fresh-item"><b>考研择校</b><span>2027 简章项已核对（2026-10）· 复试线待 2027-03</span></div>' +
-          '<div class="fresh-item"><b>考公岗位</b><span>快照 2026-10-28 · 国考统计每日自动检查</span></div>' +
-          '<div class="fresh-item"><b>实习网申</b><span>整理 2026-10-28 · 430 条官网链接实测</span></div>' +
+          '<div class="fresh-item"><b>考公岗位</b><span>快照 2026-11-10 · 四川全量 · 国考统计每日自动检查</span></div>' +
+          '<div class="fresh-item"><b>实习网申</b><span>整理 2026-11-10 · 430 条官网链接实测 · 覆盖 12 个学科方向</span></div>' +
         '</div></div>' +
         '<div class="ed-card"><div class="stamp">数据与口径</div><ul>' +
           '<li>官方优先：简章、职位表、公告以官方渠道为准，逐条标注年份与出处。</li>' +
@@ -848,7 +848,7 @@
     if (searchIndexPromise) return searchIndexPromise;
     searchIndexPromise = new Promise(function (res, rej) {
       var s = document.createElement('script');
-      s.src = 'shared/search-index.js';
+      s.src = 'shared/search-index.js?v=20261110c';
       s.onload = function () { res(window.HUB_SEARCH || []); };
       s.onerror = function () { searchIndexPromise = null; rej(new Error('search-index load failed')); };
       document.head.appendChild(s);
@@ -867,7 +867,7 @@
     var q0 = decodeURIComponent((query.match(/q=([^&]*)/) || [])[1] || '');
     el.innerHTML =
       '<div class="page-head"><div class="page-kicker">Search</div><h2 class="page-title">全局搜索</h2>' +
-      '<p class="page-sub">一个搜索框同时命中考研院校、考公岗位与实习机构，共 80,874 条索引；点击结果直达模块并自动定位。</p></div>' +
+      '<p class="page-sub">一个搜索框同时命中考研院校、考公岗位与实习机构，共 83,841 条索引；点击结果直达模块并自动定位。</p></div>' +
       '<div class="palette"><input id="searchInput" type="search" placeholder="搜院校 / 招录机关 / 职位 / 公司，如：北大 税务局 中信" value="' + esc(q0) + '"><kbd>ESC 清空</kbd></div>' +
       '<div id="searchResults" aria-live="polite"></div>';
     var input = el.querySelector('#searchInput');
@@ -965,7 +965,7 @@
       '<li>考公：国考报名期统计每天自动检查官方专题一次，有新通报自动写回并提示。</li>' +
       '<li>实习：官网链接程序化巡检，时间窗按往年规律推算并明确标注。</li>' +
       '</ul><p>收藏与投递进度保存在本机浏览器，不收集任何个人数据；换设备可用各模块内「导出 / 导入备份」迁移。</p></div></div>' +
-      '<div class="about-sec reveal"><h3>技术选型</h3><div><p>无框架原生实现：外壳 hash 路由 + iframe 沙箱、构建期生成的统一时间线（36 条）与全局搜索索引（17,819 条，含简称表与子序列匹配）、十题路径决策、三轨规划报告打印、可打印择校报告与 CSV 导出。全站静态资源 + 边缘缓存，打开即用。</p></div></div>' +
+      '<div class="about-sec reveal"><h3>技术选型</h3><div><p>无框架原生实现：外壳 hash 路由 + iframe 沙箱、构建期生成的统一时间线（36 条）与全局搜索索引（83,841 条，含简称表与子序列匹配）、十题路径决策、三轨规划报告打印、可打印择校报告与 CSV 导出。全站静态资源 + 边缘缓存，打开即用。</p></div></div>' +
       '<div class="letter reveal"><p>三岔路没有标准答案，只有看清之后自己选的那条。如果这个站能让你在某个路口少一点迷茫、少踩一个坑、多赶上一次截止日期，它就没有白做。愿你的每一个选择，都通向光明的未来。</p>' +
       '<p class="sig" style="font-size:14px">数据问题、功能建议或任何疑问，随时联系作者：邮箱 <a href="mailto:3426493108@qq.com">3426493108@qq.com</a> · 微信 Zaiayn。</p></div>';
     bindReveal(el);
@@ -977,7 +977,7 @@
     var meta = MODULE_META[name];
     var stat = '';
     if (name === 'kaoyan') stat = '211 所金融院校 · 31 专业大类';
-    else if (name === 'gongkao') stat = '79,599 个岗位 · 快照 ' + (st.gkSnapshot || st.generatedAt || '');
+    else if (name === 'gongkao') stat = '81,182 个岗位 · 快照 ' + (st.gkSnapshot || st.generatedAt || '');
     else if (name === 'intern') stat = (st.internOpen || 0) + ' 家开放中' + (st.internClosing7 ? ' · 本周截止 ' + st.internClosing7 + ' 家' : '');
     return '<div class="module-bar"><button class="menu-btn" type="button" aria-label="打开导航菜单">☰</button><span class="dot"></span><b>' + meta.name + '</b><span class="stat">' + esc(stat) + '</span>' +
       '<button class="fs-btn" type="button" aria-pressed="false">全屏</button>' +

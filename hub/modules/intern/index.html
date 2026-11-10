@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="light dark">
-<title>金融实习网申通 · 2027 寒假实习</title>
-<meta name="description" content="各大券商、基金、银行、四大、咨询、大厂寒假与暑期实习招聘网申时间、用人要求、笔试提醒一站式查询">
+<title>实习网申通 · 2027 寒假实习</title>
+<meta name="description" content="券商、基金、银行、四大、咨询、大厂，以及互联网科技、智能制造、传媒、律所、教育、医药、设计艺术、农林食品、建筑土木、体育、旅游酒店等 12 个学科方向的实习网申时间、用人要求与笔试提醒；可按学科一键筛选">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>">
 <script>
 /* 在样式表生效前把主题定好，避免深色用户看到一闪而过的白屏（FOUC）；优先外壳传入的 hubtheme */
@@ -16,12 +16,12 @@ try {
   document.documentElement.dataset.theme = __t;
   var __s = localStorage.getItem("itr_season_v1") === "summer" ? "summer" : "winter";
   document.documentElement.dataset.season = __s;
-  document.title = "金融实习网申通 · 2027 " + (__s === "summer" ? "暑假实习" : "寒假实习");
+  document.title = "实习网申通 · 2027 " + (__s === "summer" ? "暑假实习" : "寒假实习");
 } catch (e) {}
 </script>
 <link rel="stylesheet" href="../../vendor/fonts/noto-serif-sc/600.css">
 <link rel="stylesheet" href="../../vendor/fonts/noto-serif-sc/700.css">
-<link rel="stylesheet" href="css/style.css?v=15">
+<link rel="stylesheet" href="css/style.css?v=18">
 <link rel="stylesheet" href="../../shared/hub-module.css">
 </head>
 <body>
@@ -31,8 +31,8 @@ try {
     <div class="header-inner">
       <div class="brand">
         <span class="logo">📈</span>
-        <h1>金融实习网申通</h1>
-        <p class="subtitle" id="seasonSubtitle">Finance Internship Tracker · 2027 寒假实习</p>
+        <h1>实习网申通</h1>
+        <p class="subtitle" id="seasonSubtitle">Internship Tracker · 2027 寒假实习 · 12 个学科方向</p>
       </div>
       <div class="header-meta">
         <div class="season-switch" id="seasonSwitch" role="group" aria-label="实习季节">
@@ -74,6 +74,14 @@ try {
       </label>
       <!-- 手机端：分类与筛选默认收起，点这个按钮展开（桌面端隐藏） -->
       <button id="filterToggle" class="filter-toggle" type="button">展开分类与筛选 ▾</button>
+      <div class="disc-panel" id="discPanel">
+        <span class="disc-label"><b>按学科</b> 一键筛 · 可多选</span>
+        <div class="disc-chips" id="disciplineFilters"></div>
+      </div>
+      <div class="disc-panel sub-panel" id="subPanel" hidden>
+        <span class="disc-label"><b>细分方向</b> 选中一个学科后可用</span>
+        <div class="disc-chips" id="subFilters"></div>
+      </div>
       <div class="filter-group" id="categoryFilters"></div>
       <div class="filter-row">
         <select id="cityFilter"><option value="">全部城市</option></select>
@@ -111,6 +119,8 @@ try {
       <details class="legend-box">
         <summary>这些标记是什么意思</summary>
         <div class="legend">
+          <span><b class="tag disc">按学科</b> 非经管学科只筛选明确对口的机构；卡片上的「(加分)」表示该机构以经管岗位为主，该学科只是相关岗位的通用描述</span>
+          <span><b class="tag disc">职能标签</b> 大型企业/咨询机构的「法学」指总部法务、合规、风控职能；品牌、内容、游戏企业的「艺术/人文」指设计、品牌、内容岗位，具体实习岗位以官网为准</span>
           <span><b class="tag verified">✓ 官网已实测</b> 该公司的官网链接由程序实测可访问<span id="legendVerifiedDate"></span></span>
           <span><b class="tag conf-低">来源：规律推算</b> 该公司不单独发公告，时间按同类机构往年规律推算</span>
           <span><b class="tag conf-中">来源：公开报道</b> 时间来自公开报道或官方招聘页</span>
@@ -130,6 +140,7 @@ try {
     <p class="hint" id="timelineHint">根据<b>往年网申时间</b>推算的 2026 年 9 月 — 2027 年 3 月窗口分布，虚线 = 全年滚动招聘。点击色块回到该公司卡片。</p>
     <div class="timeline-controls">
       <select id="timelineCategory"><option value="">全部行业</option></select>
+      <select id="timelineDiscipline"><option value="">全部学科</option></select>
     </div>
     <div class="timeline-wrap" id="timelineWrap"></div>
   </div>
@@ -171,7 +182,7 @@ try {
 <div id="loginGate" class="login-gate" hidden>
   <div class="login-card">
     <div class="login-logo">📈</div>
-    <h2>金融实习网申通</h2>
+    <h2>实习网申通</h2>
     <p class="login-sub">数据已加密保护，请登录查看</p>
     <input id="loginUser" placeholder="账号" autocomplete="username">
     <input id="loginPass" type="password" placeholder="密码" autocomplete="current-password">
@@ -191,7 +202,12 @@ try {
 </div>
 
 <script src="js/data.plain.js"></script>
-<script src="js/app.js?v=19"></script>
+<script src="js/data-extra.js"></script>
+<script src="js/data-more.js"></script>
+<script src="js/data-more2.js"></script>
+<script src="js/data-more3.js"></script>
+<script src="js/data-more4.js"></script>
+<script src="js/app.js?v=29"></script>
 <script src="../../shared/hub-bridge.js"></script>
 </body>
 </html>

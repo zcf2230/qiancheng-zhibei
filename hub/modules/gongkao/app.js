@@ -27,7 +27,7 @@ function checkedExams() {
 const KOUBEI_FILE = DATA_DIR + 'koubei.json';
 const CUSTOM_FILE = DATA_DIR + 'custom_imports.json';
 const LS_CUSTOM_KEY = 'gongkao.custom_imports';
-const DATA_UPDATED_AT = '2026-11-05';
+const DATA_UPDATED_AT = '2026-11-10';
 const readCustom = () => { try { return JSON.parse(localStorage.getItem(LS_CUSTOM_KEY) || 'null'); } catch { return null; } };
 const writeCustom = o => localStorage.setItem(LS_CUSTOM_KEY, JSON.stringify(o));
 const clearCustom = () => localStorage.removeItem(LS_CUSTOM_KEY);
@@ -1425,6 +1425,12 @@ function toggleFav(uid) {
 
 /* 前程指北：档案预填与搜索定位 */
 (function () {
+  // 与 shared/search-index.js 的 g 类 id 同口径：32 位 FNV-1a → base36
+  function hashCode(s) {
+    var h = 2166136261;
+    for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return (h >>> 0).toString(36);
+  }
   function ready(cb) {
     if (typeof allPositions !== 'undefined' && allPositions && allPositions.length) return cb();
     var n = 0;
@@ -1449,12 +1455,33 @@ function toggleFav(uid) {
         }
       }
       var f = new URLSearchParams(location.search).get('focus');
+      var kw = document.getElementById('fKeyword');
       if (f) {
-        var pos = allPositions.find(function (x) { return x.uid === f; });
-        var kw = document.getElementById('fKeyword');
-        if (pos && kw) kw.value = pos.position || pos.dept || '';
+        // 新索引 id = 考试名|hash；先勾选对应考试，等懒加载完成再定位
+        var parts = f.split('|');
+        var exam = parts.length === 2 ? parts[0] : '';
+        var hash = parts.length === 2 ? parts[1] : '';
+        if (exam) {
+          var cb = Array.prototype.find.call(document.querySelectorAll('#examChecks input'), function (x) { return x.value === exam; });
+          if (cb && !cb.checked) { cb.checked = true; cb.dispatchEvent(new Event('change', { bubbles: true })); }
+        }
+        var tries = 0;
+        (function spot() {
+          var pos = hash
+            ? allPositions.find(function (x) { return hashCode(x.uid) === hash; })
+            : allPositions.find(function (x) { return x.uid === f; });
+          if (pos && kw) {
+            kw.value = pos.position || pos.dept || '';
+            document.getElementById('btnMatch').click();
+          } else if (tries++ < 25) {
+            setTimeout(spot, 160);
+          } else {
+            document.getElementById('btnMatch').click();
+          }
+        })();
+      } else {
+        document.getElementById('btnMatch').click();
       }
-      document.getElementById('btnMatch').click();
     } catch (e) {}
   });
 })();

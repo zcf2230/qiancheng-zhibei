@@ -46,7 +46,7 @@ let VIEW = 'query';
 let SCORE = null;              // 分数匹配：用户输入的预估总分
 
 /* ---------- 多专业大类（方案A）：每个大类独立数据目录，金融保持默认 ---------- */
-const DATA_VERSION = 3;
+const DATA_VERSION = 5;
 const MAJORS = {
   fin:  { label: '金融',           z: '金融专硕',           x: '金融学硕',         zCode: '0251',   xCode: '0202', cat: '经济学', dir: '',     math: [['396', '考396经综'], ['数学三', '考数学三']] },
   cs:   { label: '计算机/电子信息', z: '计算机专硕',         x: '计算机学硕',       zCode: '0854',   xCode: '0812', cat: '工学',   dir: 'cs/',  math: [['数学一', '考数一'], ['数学二', '考数二'], ['408', '考408']] },
@@ -56,8 +56,8 @@ const MAJORS = {
   mpacc:{ label: '会计MPAcc',       z: '会计专硕',           x: '会计学硕',         zCode: '1253',   xCode: '1202', cat: '管理学', dir: 'mpacc/',math: [] },
   edu:  { label: '教育',            z: '教育专硕',           x: '教育学硕',         zCode: '0451',   xCode: '0401', cat: '教育学', dir: 'edu/', math: [] },
   jmc:  { label: '新闻与传播',      z: '新传专硕',           x: '新闻传播学硕',     zCode: '0552',   xCode: '0503', cat: '文学',   dir: 'jmc/', math: [] },
-  phil: { label: '哲学', z: '哲学专硕', x: '哲学学硕', zCode: '0101', xCode: '0101', cat: '哲学', dir: 'phil/', math: [] },
-  hist: { label: '历史学', z: '历史学专硕', x: '历史学学硕', zCode: '0651', xCode: '0602', cat: '历史学', dir: 'hist/', math: [] },
+  phil: { label: '哲学', z: '应用伦理专硕', x: '哲学学硕', zCode: '0151', xCode: '0101', cat: '哲学', dir: 'phil/', math: [] },
+  hist: { label: '历史学', z: '博物馆专硕', x: '历史学学硕', zCode: '0651', xCode: '0602', cat: '历史学', dir: 'hist/', math: [] },
   sci:  { label: '理学(数理化生)', z: '理学专硕', x: '理学学硕', zCode: '0701', xCode: '0701', cat: '理学', dir: 'sci/', math: [] },
   agr:  { label: '农学', z: '农学专硕', x: '农学学硕', zCode: '0951', xCode: '0901', cat: '农学', dir: 'agr/', math: [] },
   med:  { label: '临床医学', z: '临床医学专硕', x: '临床医学学硕', zCode: '1051', xCode: '1002', cat: '医学', dir: 'med/', math: [] },

@@ -1,4 +1,4 @@
-/* 金融实习网申通 —— 主逻辑 */
+/* 实习网申通 —— 主逻辑（金融 / 理工 / 人文社科 / 艺术） */
 (function () {
   "use strict";
 
@@ -111,7 +111,9 @@
     var open = parseOne(openStr, type);
     if (!open) return (isRolling(closeStr) || isUntilFilled(closeStr)) ? { rolling: true } : null;
     var close = parseOne(closeStr, type);
-    if (!close && openStr) {
+    // 「招满即止」是截止方式，不参与日期推断；否则「约10-11月」会被当成精确到 11 月 10 日，
+    // 到 11 月 10 日当天就会误显示「今天截止」。
+    if (!close && openStr && !isUntilFilled(closeStr)) {
       var parts = String(openStr).split(/[-—–~至]|到/);
       if (parts.length === 2) {
         var left = parts[0], right = parts[1];
@@ -188,7 +190,7 @@
     var h = HAY_CACHE[k];
     if (h === undefined) {
       h = HAY_CACHE[k] = [c.name, c.subcategory, (c.cities || []).join(" "), c.major, c.skills, c.degree,
-        c.biz, c.jobs, c.scale, c.note, (c.tags || []).join(" ")].join(" ").toLowerCase();
+        c.biz, c.jobs, c.scale, c.note, (c.disciplines || []).join(" "), (c.tags || []).join(" ")].join(" ").toLowerCase();
     }
     return h;
   }
@@ -389,6 +391,156 @@
     }
   };
 
+  /* ---------- 新增非经管学科的用人要求兜底 ----------
+     与上面两套同理：逐家只写最确定的机构信息与专业方向，
+     通用学历/技能/待遇按行业写在这里；拿到官方口径时直接写进数据覆盖。 */
+  var DISC_SOURCE = "机构/公司官网与公开招聘信息整理（2026-11 汇总）；" +
+    "批次时间按行业往年规律估算，用人要求为同类岗位通用规律，未逐家核实";
+  var DISC_DEFAULTS = {
+    "互联网/科技": {
+      degree: "本科及以上，研发/算法岗硕士优先",
+      certs: "无硬性证书要求",
+      skills: "研发岗：数据结构与算法、Java/C++/Go/Python；产品运营岗：SQL、数据分析、沟通协作",
+      english: "CET-4 起，部分海外业务岗要求 CET-6 或流利英语",
+      writtenTest: "有：技术岗在线编程/专业题，非技术岗以测评为主",
+      interviews: "约2-3轮：业务/技术面 + HR 面",
+      salary: "约200-400元/天，技术岗偏上限",
+      housing: "餐补/房补以 offer 为准",
+      retention: "暑期实习是主要转正通道，日常实习表现优秀可走绿色通道"
+    },
+    "智能制造/新能源": {
+      degree: "本科及以上，研发岗硕士优先",
+      major: "机械/车辆/电气/材料/自动化等工科，职能岗看对口专业",
+      certs: "无硬性证书要求",
+      skills: "CAD/CAE、编程（Python/MATLAB）、工艺与项目管理基础",
+      english: "CET-4 起，研发岗需阅读英文技术资料",
+      writtenTest: "有：部分岗位专业笔试+综合测评",
+      interviews: "约2轮：专业面 + HR 面",
+      salary: "约150-300元/天",
+      housing: "部分厂区提供宿舍/餐补",
+      retention: "以校招为主，实习表现优秀可优先录用"
+    },
+    "传媒/文化": {
+      degree: "本科及以上，采编岗硕士优先",
+      certs: "无硬性，记者证/普通话证书加分",
+      skills: "采访写作、选题策划、视频剪辑、新媒体运营",
+      english: "CET-6 起，国际传播岗要求更高",
+      writtenTest: "有：采编岗新闻写作/时政常识，运营岗多为测评",
+      interviews: "约2轮：业务面 + HR 面",
+      salary: "约100-250元/天",
+      housing: "不包住宿",
+      retention: "表现优秀可校招留用/推荐"
+    },
+    "律所/法务": {
+      degree: "本科及以上，红圈所实习偏好法学硕士/LLM",
+      major: "法学（民商法/经济法/国际法优先）",
+      certs: "法律职业资格优先",
+      skills: "法律检索、合同审阅、法律文书写作、英语工作能力",
+      english: "CET-6 以上，涉外业务要求雅思/托福",
+      writtenTest: "部分所有笔试：案例分析/中英互译",
+      interviews: "约2轮：律师面 + 合伙人面",
+      salary: "约150-400元/天（红圈所偏高）",
+      housing: "不包住宿",
+      retention: "实习3-6个月，表现优秀可留用/校招转正"
+    },
+    "教育培训": {
+      degree: "本科及以上，主讲/教研岗硕士优先",
+      major: "专业不限，学科对口/师范类优先",
+      certs: "教师资格证优先",
+      skills: "学科功底、表达与课堂掌控、课件制作",
+      english: "英语教师岗要求专八/雅思 7+",
+      writtenTest: "有：学科笔试+试讲",
+      interviews: "约2-3轮：试讲 + 业务面",
+      salary: "约100-300元/天，主讲课时费另计",
+      housing: "不包住宿，部分校区有餐补",
+      retention: "实习转正/续签为主"
+    },
+    "医药健康": {
+      degree: "本科及以上，研发岗硕士/博士优先",
+      major: "药学/生物/医学/化学/生物医学工程",
+      certs: "无硬性，GCP/执业药师/临床相关资格加分",
+      skills: "实验操作、文献检索、数据分析、GMP/临床规范",
+      english: "CET-6，研发岗需阅读英文文献",
+      writtenTest: "部分岗位有专业笔试/测评",
+      interviews: "约2轮：专业面 + HR 面",
+      salary: "约150-300元/天",
+      housing: "部分园区提供宿舍/餐补",
+      retention: "实习转正/校招"
+    },
+    "设计/广告/艺术": {
+      degree: "本科及以上，以作品集为主",
+      major: "视觉传达/广告/数字媒体/工业设计/动画/影视",
+      certs: "无硬性证书要求",
+      skills: "PS/AI/Figma/C4D/PR/AE、手绘/3D、创意提案",
+      english: "4A 与外资公司要求英文提案",
+      writtenTest: "无统一笔试：以作品集+面试为主",
+      interviews: "约2轮：作品面 + 业务面",
+      salary: "约100-300元/天",
+      housing: "不包住宿",
+      retention: "实习转正/项目续签"
+    },
+    "公共/研究": {
+      degree: "本科及以上，研究岗硕士优先",
+      major: "社会学/政治学/经济学/公共管理/国际关系/统计学",
+      certs: "无硬性证书要求",
+      skills: "文献研究、问卷设计、访谈、Excel/Stata/R、报告写作",
+      english: "CET-6；国际组织要求流利英语",
+      writtenTest: "部分岗位有研究能力测试/英文写作",
+      interviews: "约2轮：业务面 + HR 面",
+      salary: "约80-200元/天，国际组织/智库偏高",
+      housing: "不包住宿",
+      retention: "项目制/校招，部分可转正"
+    },
+    "农林/食品": {
+      degree: "本科及以上，研发/技术岗硕士优先",
+      major: "农学/食品科学/动物医学/生物/园艺/水产",
+      certs: "无硬性，执业兽医/食品检验等资格加分",
+      skills: "实验操作、田间/生产管理、质量控制、数据分析",
+      english: "CET-4 起，研发岗需阅读英文文献",
+      writtenTest: "部分岗位有专业笔试/测评",
+      interviews: "约2轮：专业面 + HR 面",
+      salary: "约120-250元/天",
+      housing: "部分基地提供宿舍/餐补",
+      retention: "实习转正/校招，生产基地以校招为主"
+    },
+    "建筑/土木/规划": {
+      degree: "本科及以上，设计院与规划院偏好硕士",
+      major: "建筑学/土木工程/城市规划/风景园林/工程管理",
+      certs: "注册建筑/结构/规划等基础考试通过者加分",
+      skills: "CAD/Revit/SketchUp/GIS、结构计算、施工图、项目协调",
+      english: "CET-4 起，涉外项目要求 CET-6",
+      writtenTest: "部分有快题/专业笔试",
+      interviews: "约2轮：专业面 + HR 面",
+      salary: "约120-300元/天",
+      housing: "项目现场提供宿舍/餐补",
+      retention: "实习转正/校招，设计院多通过实习考察"
+    },
+    "体育/赛事": {
+      degree: "本科及以上，赛事/俱乐部岗专业不限",
+      major: "体育教育/运动训练/体育管理/新闻/市场营销",
+      certs: "教练证/裁判证/救生证等加分",
+      skills: "训练指导、赛事执行、内容运营、数据分析",
+      english: "CET-4 起，国际赛事岗位要求英语",
+      writtenTest: "部分岗位有体能/专业测试",
+      interviews: "约2轮：业务面 + HR 面",
+      salary: "约100-250元/天",
+      housing: "赛事期包食宿，俱乐部以基地安排为主",
+      retention: "项目制/实习转正，赛事公司以项目续签为主"
+    },
+    "旅游/酒店/会展": {
+      degree: "本科及以上，酒店与景区岗位可接受专科",
+      major: "旅游管理/酒店管理/会展经济/市场营销/外语",
+      certs: "导游证/酒店类证书加分",
+      skills: "客户服务、运营排班、英语口语、活动执行",
+      english: "CET-4 起，涉外酒店与入境游要求流利口语",
+      writtenTest: "部分岗位有测评/情景测试",
+      interviews: "约2轮：业务面 + HR 面",
+      salary: "约100-250元/天",
+      housing: "酒店岗位多包食宿，景区岗位以宿舍为主",
+      retention: "实习转正/管培生，酒店以留用为主"
+    }
+  };
+
   function applyDefaults(c) {
     var k;
     if (c.category === "小而美公司") {
@@ -403,6 +555,12 @@
       for (k in e) { if (!c[k]) c[k] = e[k]; }
       if (!c.source) c.source = EXTRA_SOURCE;
     }
+    // 新增的理工/人文/社科等分类：同样按主分类兜底
+    var d2 = DISC_DEFAULTS[c.category];
+    if (d2) {
+      for (k in d2) { if (!c[k]) c[k] = d2[k]; }
+      if (!c.source) c.source = DISC_SOURCE;
+    }
   }
   // 卡片/详情里那行「主营 · 适合投递 · 体量」
   function sbLine(c) {
@@ -414,8 +572,153 @@
     return parts.join("　·　");
   }
 
+  /* ---------- 学科标签：先选学科，再叠加行业/城市 ----------
+     新增的理工/人文/社科/法学/艺术/教育/医药机构在数据里显式带 disciplines；
+     原有 1064 家金融/经管机构没有这个字段，按主营、专业与技能自动归类，
+     详情里会注明「自动归类，仅供参考」，不把推断写成官方要求。 */
+  var DISC_META = [
+    { key: "经管", hint: "金融 / 会计 / 经济 / 管理" },
+    { key: "理工", hint: "计算机 / 电子 / 机械 / 数理 / 材料" },
+    { key: "人文", hint: "新闻 / 中文 / 外语 / 历史 / 哲学" },
+    { key: "社科", hint: "社会 / 公共管理 / 心理 / 国际关系" },
+    { key: "法学", hint: "法学 / 法务 / 合规" },
+    { key: "艺术", hint: "设计 / 影视 / 动画 / 广告" },
+    { key: "教育", hint: "教育 / 师范 / 教研" },
+    { key: "医药", hint: "医学 / 药学 / 生物 / 护理" },
+    { key: "农学", hint: "农学 / 食品 / 动物医学 / 水产 / 园艺" },
+    { key: "建筑", hint: "建筑 / 土木 / 城市规划 / 风景园林" },
+    { key: "体育", hint: "体育教育 / 运动训练 / 体育管理 / 电竞" },
+    { key: "旅游", hint: "旅游管理 / 酒店管理 / 会展 / 文旅" }
+  ];
+  function inferDisciplines(c) {
+    var t = [c.category, c.subcategory, c.major, c.skills, c.biz, c.jobs, c.note, (c.tags || []).join(" ")].join(" ");
+    var out = [];
+    function add(d) { if (out.indexOf(d) < 0) out.push(d); }
+    add("经管");
+    if (c.category === "大厂/金融科技" || /计算机|软件|电子|通信|自动化|数学|统计|物理|数据|算法|工程|技术|量化/.test(t)) add("理工");
+    if (/法律|法务|法学|合规/.test(t)) add("法学");
+    if (/医学|医药|药学|生物|临床|护理|医疗器械/.test(t)) add("医药");
+    if (/新闻|传媒|传播|中文|文案|编辑|新媒体|出版|广告|品牌/.test(t)) add("人文");
+    if (/社会|公共管理|政治|心理|国际关系|公益/.test(t)) add("社科");
+    // 「设计」单字会把芯片设计/电路设计误判成艺术类，只认视觉/工业/交互等具体方向
+    if (/视觉设计|交互设计|工业设计|产品设计|UI|UX|美术|动画|影视|摄影|音乐|艺术|服装设计|环境设计|游戏美术|广告创意/.test(t)) add("艺术");
+    if (/教育|培训|教师|教研|师范/.test(t)) add("教育");
+    return out;
+  }
+  function inDisc(c, d) { return (c.disciplines || []).indexOf(d) >= 0; }
+  // 筛选口径：非经管学科只认「明确对口」（新增机构或人工补标），
+  // 不把「理工科复合背景加分」这类经管岗位的通用描述算成理工岗位。
+  function inDiscFilter(c, d) {
+    return inDisc(c, d) && (d === "经管" || !c.discInferred);
+  }
+  function discLabels(c) {
+    return (c.disciplines || []).map(function (d) {
+      return d + (c.discInferred && d !== "经管" ? "(加分)" : "");
+    });
+  }
+
+  /* ---------- 细分方向：选中一个学科后，再按方向收窄 ---------- */
+  var SUB_META = {
+    "经管": [
+      { key: "金融", test: /金融|证券|基金|银行|保险|信托|资管|投行|PE|VC|租赁|消费金融|理财/ },
+      { key: "会计/审计", test: /会计|审计|四大|税务|财会|评估/ },
+      { key: "经济/贸易", test: /经济|贸易|国际商务|商务|外贸|进出口/ },
+      { key: "管理/咨询", test: /管理|咨询|战略|人力|运营|市场/ },
+      { key: "物流/供应链", test: /物流|供应链|快递|航运|港口|仓储/ },
+      { key: "电子商务", test: /电商|电子商务|零售|平台/ }
+    ],
+    "理工": [
+      { key: "人工智能/算法", test: /人工智能|算法|机器学习|深度学习|大模型|计算机视觉|语音|数据科学|智能驾驶|自动驾驶/ },
+      { key: "计算机/软件", test: /计算机|软件|互联网|开发|程序|SaaS|IT|信息技术|云/ },
+      { key: "芯片/半导体", test: /芯片|半导体|集成电路|微电子|晶圆|光刻|封测|显示面板|面板|存储|传感器|元器件|光电/ },
+      { key: "新能源/电气", test: /新能源|电池|光伏|储能|电力|电气|风电|汽车|充电/ },
+      { key: "机械/制造", test: /机械|制造|自动化|机器人|装备|工业|材料|工艺/ },
+      { key: "环境/双碳", test: /环境|环保|双碳|碳中和|水务|节能|减排/ }
+    ],
+    "医药": [
+      { key: "临床医学", test: /临床|医院|眼科|口腔|肿瘤|脑科|医疗服务/ },
+      { key: "药学/制药", test: /药|制药|CDMO|CRO|原料药|中药|生物药/ },
+      { key: "护理/康复", test: /护理|康复|视光|体检|健康管理/ },
+      { key: "公共卫生", test: /公共卫生|疾控|流行病|卫生/ },
+      { key: "医疗器械", test: /器械|影像|IVD|诊断|设备|生物医学工程/ }
+    ],
+    "人文": [
+      { key: "新闻/传播", test: /新闻|媒体|报|通讯社|广电|新媒体|传播|记者/ },
+      { key: "出版/编辑", test: /出版|图书|书店|杂志|编辑|版权/ },
+      { key: "外语/翻译", test: /外语|翻译|英语|语言|国际传播/ },
+      { key: "影视/文化", test: /影视|电影|剧集|演艺|文化|综艺|戏剧/ }
+    ],
+    "社科": [
+      { key: "心理学", test: /心理/ },
+      { key: "社会工作", test: /社会|公益|NGO|基金会|救助|慈善/ },
+      { key: "公共管理", test: /公共管理|公共政策|政府|智库|政策|治理/ },
+      { key: "国际关系", test: /国际关系|外交|国际组织|国际问题|全球治理/ }
+    ],
+    "法学": [
+      { key: "律所", test: /律所|事务所/ },
+      { key: "企业法务", test: /法务|合规|风控/ },
+      { key: "知识产权", test: /知识产权|专利|商标|版权/ },
+      { key: "争议解决", test: /争议|诉讼|仲裁|刑事|行政争议/ }
+    ],
+    "教育": [
+      { key: "K12/素养", test: /K12|中小学|辅导|素养|少儿|个性化/ },
+      { key: "语言培训", test: /语言|英语|雅思|托福|语培|小语种/ },
+      { key: "留学", test: /留学|国际教育|国际课程/ },
+      { key: "职业教育", test: /职业|IT 职业|公考|财会培训|技能|民办高校|高等教育/ },
+      { key: "教育出版", test: /教育出版|出版|教辅|教材|教育媒体/ }
+    ],
+    "艺术": [
+      { key: "游戏", test: /游戏|电竞/ },
+      { key: "动画/影视", test: /动画|影视|电影|剧集|特效|后期/ },
+      { key: "设计", test: /设计|视觉|工业设计|室内|建筑|品牌设计/ },
+      { key: "广告/公关", test: /广告|公关|创意|媒介|营销/ },
+      { key: "服装/时尚", test: /服装|时尚|服饰|鞋服/ }
+    ],
+    "农学": [
+      { key: "种业", test: /种业|种子|育种/ },
+      { key: "养殖/动保", test: /养殖|动物|兽医|饲料|动保|疫苗/ },
+      { key: "食品", test: /食品|烘焙|休闲食品|肉制品|速冻|饮料/ },
+      { key: "农业服务/农资", test: /农业|农资|农药|化肥|植保|农垦/ },
+      { key: "水产", test: /水产|渔业|海洋牧场|远洋/ }
+    ],
+    "建筑": [
+      { key: "建筑设计", test: /建筑设计|设计院|建筑设计院/ },
+      { key: "城市规划", test: /规划|城市设计/ },
+      { key: "施工/工程", test: /施工|工程|建设|隧道|桥梁|市政/ },
+      { key: "地产/园区", test: /地产|房地产|园区|开发|置业/ },
+      { key: "装饰/室内", test: /装饰|室内|家装|软装/ }
+    ],
+    "体育": [
+      { key: "体育用品", test: /体育用品|运动鞋服|户外|运动服饰/ },
+      { key: "健身", test: /健身|运动空间|健康/ },
+      { key: "赛事/场馆", test: /赛事|场馆|体育产业|体育营销|体育服务/ },
+      { key: "俱乐部", test: /俱乐部/ },
+      { key: "电竞", test: /电竞/ },
+      { key: "体育媒体", test: /体育媒体|体育社区|体育内容/ }
+    ],
+    "旅游": [
+      { key: "OTA/平台", test: /在线旅游|旅行社|旅游服务|旅游集团/ },
+      { key: "酒店", test: /酒店|度假/ },
+      { key: "航空", test: /航空/ },
+      { key: "景区/文旅", test: /景区|文旅|主题乐园|度假区|古镇/ },
+      { key: "会展", test: /会展|会议|展览/ }
+    ]
+  };
+  function inferSubdirs(c) {
+    var text = [c.name, c.category, c.subcategory, c.biz, c.jobs, c.major, (c.tags || []).join(" ")].join(" ");
+    var out = [];
+    (c.disciplines || []).forEach(function (d) {
+      (SUB_META[d] || []).forEach(function (s) {
+        if (s.test.test(text) && out.indexOf(s.key) < 0) out.push(s.key);
+      });
+    });
+    return out;
+  }
+  function inSub(c, s) { return (c.subdirs || []).indexOf(s) >= 0; }
+  function activeDisc() { return filters.disc.length === 1 ? filters.disc[0] : ""; }
+
   /* ---------- 筛选 ---------- */
-  var filters = { q: "", cats: [], city: "", batch: "", degree: "", test: "", hz: "", status: "" };
+  var filters = { q: "", cats: [], disc: [], sub: "", city: "", batch: "", degree: "", test: "", hz: "", status: "" };
   function summerOnlyEnabled() {
     var cb = $("#seasonOnly");
     return activeSeason === "summer" && (!cb || cb.checked);
@@ -438,20 +741,29 @@
     if (/^无|不需要|无需|不设/.test(t)) return false;
     return true;
   }
-  function matchCompany(c) {
+  // skip 用于「分面计数」：统计某组 chip 的家数时，跳过它自己这一维，
+  // 否则选中「理工」后其他学科都会变成 0，用户没法看出还能叠加什么。
+  function skipDim(skip, k) { return skip === k || (skip && skip.indexOf && skip.indexOf(k) >= 0); }
+  function matchCompany(c, skip) {
     // 注意：这里不需要算状态。以前有一句 `var st = companyStatus(c)` 算完却没用，
     // 等于每敲一个字就白算 1064 次日期解析，已删除。
     if (summerOnlyEnabled() && !summerBatches(c).length) return false;
-    if (filters.q) {
+    if (!skipDim(skip, "q") && filters.q) {
       // 搜索用的「大字符串」按公司缓存一次。原来每敲一个字都要给 1064 家公司
       // 重新拼接 10 个字段再转小写（每次约 1MB 字符串分配），是输入卡顿的主因之一。
       if (haystack(c).indexOf(filters.qLower) < 0) return false;
     }
-    if (filters.cats.length) {
+    if (!skipDim(skip, "cats") && filters.cats.length) {
       var hit = false;
       for (var i = 0; i < filters.cats.length; i++) { if (inCat(c, filters.cats[i])) { hit = true; break; } }
       if (!hit) return false;
     }
+    if (!skipDim(skip, "disc") && filters.disc.length) {
+      var hitD = false;
+      for (var j = 0; j < filters.disc.length; j++) { if (inDiscFilter(c, filters.disc[j])) { hitD = true; break; } }
+      if (!hitD) return false;
+    }
+    if (!skipDim(skip, "sub") && filters.sub && !inSub(c, filters.sub)) return false;
     if (filters.city && (c.cities || []).indexOf(filters.city) < 0) return false;
     if (filters.batch) {
       var has = seasonBatches(c).some(function (b) { return b.type && b.type.indexOf(filters.batch) >= 0; });
@@ -472,9 +784,38 @@
     }
     return true;
   }
+  // 学科 → 主行业目录：筛选时先让「专门做这一行」的机构排在前面，
+  // 再排大型企业的法务/品牌/内容等职能岗，避免法学第一屏全是综合央企。
+  var DISC_CAT = {
+    "理工": ["互联网/科技", "智能制造/新能源", "医药健康"],
+    "人文": ["传媒/文化"],
+    "社科": ["公共/研究"],
+    "法学": ["律所/法务"],
+    "艺术": ["设计/广告/艺术"],
+    "教育": ["教育培训"],
+    "医药": ["医药健康"],
+    "农学": ["农林/食品"],
+    "建筑": ["建筑/土木/规划"],
+    "体育": ["体育/赛事"],
+    "旅游": ["旅游/酒店/会展"]
+  };
+  function primaryDiscRank(c) {
+    var want = [];
+    filters.disc.forEach(function (d) { if (DISC_CAT[d]) want = want.concat(DISC_CAT[d]); });
+    if (!want.length) return 0;
+    if (want.indexOf(c.category) >= 0) return 3;   // 主行业就是这一行，最优先
+    if ((c.tags || []).some(function (t) { return want.indexOf(t) >= 0; })) return 2; // 附加归类
+    return 1;                                      // 仅学科标签（企业职能岗）
+  }
   function sortCompanies(a, b) {
     var fa = isFav(a.id), fb = isFav(b.id);
     if (fa !== fb) return fa ? -1 : 1; // 收藏的永远置顶
+    if (filters.disc.length) {
+      var pa = primaryDiscRank(a), pb = primaryDiscRank(b);
+      if (pa !== pb) return pb - pa;
+      var sa = a.discInferred ? 0 : 1, sb = b.discInferred ? 0 : 1;
+      if (sa !== sb) return sb - sa;
+    }
     var oa = statusOf(a), ob = statusOf(b);
     var order = { opening: 0, rolling: 1, soon: 2, unknown: 3, closed: 4 };
     if (order[oa.state] !== order[ob.state]) return order[oa.state] - order[ob.state];
@@ -500,13 +841,19 @@
   }
 
   /* ---------- 渲染：公司库 ---------- */
+  var CAT_ORDER = ["券商/投行", "基金/资管/PE·VC", "银行/保险/信托", "四大/咨询", "大厂/金融科技", "上市公司", "央国企", "小而美公司",
+    "互联网/科技", "智能制造/新能源", "传媒/文化", "律所/法务", "教育培训", "医药健康", "设计/广告/艺术", "公共/研究",
+    "农林/食品", "建筑/土木/规划", "体育/赛事", "旅游/酒店/会展"];
   function allCategories() {
     var cats = [];
     DATA.companies.forEach(function (c) {
       if (cats.indexOf(c.category) < 0) cats.push(c.category);
       (c.tags || []).forEach(function (t) { if (cats.indexOf(t) < 0) cats.push(t); });
     });
-    return cats;
+    return cats.sort(function (a, b) {
+      var ia = CAT_ORDER.indexOf(a), ib = CAT_ORDER.indexOf(b);
+      return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+    });
   }
 
   function renderCategories() {
@@ -519,7 +866,9 @@
       // 记住已选中的分类：分类条重建时要还原高亮，否则 UI 与 filters.cats 会不一致
       var on = filters.cats.indexOf(cat) >= 0 ? " active" : "";
       var n = 0;
-      for (var k = 0; k < categoryCompanies.length; k++) { if (inCat(categoryCompanies[k], cat)) n++; }
+      for (var k = 0; k < categoryCompanies.length; k++) {
+        if (inCat(categoryCompanies[k], cat) && matchCompany(categoryCompanies[k], ["cats", "q"])) n++;
+      }
       return '<button class="chip' + on + '" data-cat="' + esc(cat) + '">' +
         "<i>" + (i + 1 < 10 ? "0" : "") + (i + 1) + "</i>" +
         esc(cat) + "<b>" + n + "</b></button>";
@@ -546,6 +895,83 @@
     }).join("");
   }
 
+  function discBase() {
+    return activeSeason === "summer"
+      ? DATA.companies.filter(function (c) { return summerBatches(c).length > 0; })
+      : DATA.companies;
+  }
+
+  function renderDisciplines() {
+    var box = $("#disciplineFilters");
+    if (!box) return;
+    var base = discBase();
+    var allN = base.filter(function (c) { return matchCompany(c, ["disc", "q"]); }).length;
+    var html = '<button class="chip' + (filters.disc.length ? "" : " active") + '" data-disc="">全部<b>' + allN + "</b></button>";
+    DISC_META.forEach(function (d) {
+      var n = base.filter(function (c) { return inDiscFilter(c, d.key) && matchCompany(c, ["disc", "q"]); }).length;
+      var on = filters.disc.indexOf(d.key) >= 0 ? " active" : "";
+      html += '<button class="chip' + on + '" data-disc="' + esc(d.key) + '" title="' + esc(d.hint + (d.key === "经管" ? "" : "；只看明确对口机构")) + '">' +
+        esc(d.key) + "<b>" + n + "</b></button>";
+    });
+    box.innerHTML = html;
+
+    // 时间轴的学科下拉与这里共用一份配置
+    var tw = $("#timelineDiscipline");
+    if (tw) {
+      var cur = tw.value;
+      tw.innerHTML = '<option value="">全部学科</option>' + DISC_META.map(function (d) {
+        return '<option value="' + esc(d.key) + '">' + esc(d.key) + "</option>";
+      }).join("");
+      tw.value = cur || "";
+    }
+  }
+
+  function renderSubDirs() {
+    var panel = $("#subPanel"), box = $("#subFilters");
+    if (!panel || !box) return;
+    var d = activeDisc();
+    if (!d || !SUB_META[d]) {
+      panel.hidden = true;
+      box.innerHTML = "";
+      filters.sub = "";
+      return;
+    }
+    if (filters.sub && !SUB_META[d].some(function (s) { return s.key === filters.sub; })) filters.sub = "";
+    panel.hidden = false;
+    var base = discBase();
+    var allN = base.filter(function (c) { return matchCompany(c, ["sub", "q"]); }).length;
+    var html = '<button class="chip' + (filters.sub ? "" : " active") + '" data-sub="">全部方向<b>' + allN + "</b></button>";
+    SUB_META[d].forEach(function (s) {
+      var n = base.filter(function (c) { return inSub(c, s.key) && matchCompany(c, ["sub", "q"]); }).length;
+      var on = filters.sub === s.key ? " active" : "";
+      html += '<button class="chip' + on + '" data-sub="' + esc(s.key) + '">' + esc(s.key) + "<b>" + n + "</b></button>";
+    });
+    box.innerHTML = html;
+  }
+
+  // 只改 chip 上的家数，不重建 DOM，避免点击时闪烁
+  function updateFacetCounts() {
+    var base = discBase();
+    $$("#categoryFilters .chip").forEach(function (b) {
+      var cat = b.dataset.cat;
+      var n = base.filter(function (c) { return inCat(c, cat) && matchCompany(c, ["cats", "q"]); }).length;
+      var el = b.querySelector("b");
+      if (el) el.textContent = n;
+    });
+    $$("#disciplineFilters .chip").forEach(function (b) {
+      var d = b.dataset.disc;
+      var n = base.filter(function (c) { return (!d || inDiscFilter(c, d)) && matchCompany(c, ["disc", "q"]); }).length;
+      var el = b.querySelector("b");
+      if (el) el.textContent = n;
+    });
+    $$("#subFilters .chip").forEach(function (b) {
+      var s = b.dataset.sub;
+      var n = base.filter(function (c) { return (!s || inSub(c, s)) && matchCompany(c, ["sub", "q"]); }).length;
+      var el = b.querySelector("b");
+      if (el) el.textContent = n;
+    });
+  }
+
   function batchLine(b) {
     var win;
     if (isRolling(b.open)) win = "全年滚动 · 招满即止";
@@ -564,6 +990,7 @@
     var pg = progress[c.id] || { stage: "none" };
     var meta = [];
     if (c.cities && c.cities.length) meta.push("📍 " + esc(c.cities.join(" / ")));
+    if (c.disciplines && c.disciplines.length) meta.push("🎯 学科：" + esc(discLabels(c).join(" / ")));
     if (c.degree) meta.push("🎓 " + esc(c.degree));
     if (c.salary) meta.push("💰 " + esc(c.salary));
     if (c.housing && /包|提供|住宿|餐/.test(c.housing)) meta.push("🏠 " + esc(c.housing));
@@ -612,6 +1039,8 @@
     var p = [];
     if (filters.q) p.push("q=" + encodeURIComponent(filters.q));
     if (filters.cats.length) p.push("cats=" + encodeURIComponent(filters.cats.join("|")));
+    if (filters.disc.length) p.push("disc=" + encodeURIComponent(filters.disc.join("|")));
+    if (filters.sub) p.push("sub=" + encodeURIComponent(filters.sub));
     ["city", "batch", "degree", "test", "hz", "status"].forEach(function (k) {
       if (filters[k]) p.push(k + "=" + encodeURIComponent(filters[k]));
     });
@@ -626,7 +1055,7 @@
   function hashToFilters() {
     var h = (location.hash || "").slice(1);
     if (!h) return false;
-    var f = { q: "", cats: [], city: "", batch: "", degree: "", test: "", hz: "", status: "" };
+    var f = { q: "", cats: [], disc: [], sub: "", city: "", batch: "", degree: "", test: "", hz: "", status: "" };
     var any = false;
     h.split("&").forEach(function (kv) {
       var i = kv.indexOf("=");
@@ -635,6 +1064,7 @@
       try { v = decodeURIComponent(kv.slice(i + 1)); } catch (e) { v = kv.slice(i + 1); }
       if (k === "q" && v) { f.q = v; any = true; }
       else if (k === "cats" && v) { f.cats = v.split("|"); any = true; }
+      else if (k === "disc" && v) { f.disc = v.split("|"); any = true; }
       else if (k in f && v) { f[k] = v; any = true; }
     });
     if (!any) return false;
@@ -665,19 +1095,23 @@
     // 折叠按钮上的「已选 N 项」提示（手机端可见）
     var ft = $("#filterToggle");
     if (ft) {
-      var n = (filters.q ? 1 : 0) + filters.cats.length;
+      var n = (filters.q ? 1 : 0) + filters.cats.length + filters.disc.length + (filters.sub ? 1 : 0);
       ["city", "batch", "degree", "test", "hz", "status"].forEach(function (k) { if (filters[k]) n++; });
       var open = $("#filterPanel") && $("#filterPanel").classList.contains("open");
       ft.textContent = (open ? "收起分类与筛选 ▴" : "展开分类与筛选 ▾") + (n ? "（已选 " + n + " 项）" : "");
     }
-    var list = DATA.companies.filter(matchCompany).sort(sortCompanies);
+    var list = DATA.companies.filter(function (c) { return matchCompany(c); }).sort(sortCompanies);
     var baseTotal = summerOnlyEnabled()
       ? DATA.companies.filter(function (c) { return summerBatches(c).length > 0; }).length
       : DATA.companies.length;
     var baseLabel = summerOnlyEnabled() ? "已收录暑期批 " + baseTotal + " 家" : "全库 " + baseTotal + " 家";
+    var discTxt = filters.disc.length
+      ? " · 学科：" + esc(filters.disc.join(" / ")) + (filters.disc.some(function (d) { return d !== "经管"; }) ? "（非经管只看明确对口）" : "")
+      : "";
+    var subTxt = filters.sub ? " · 方向：" + esc(filters.sub) : "";
     $("#resultCount").innerHTML = (list.length === baseTotal
       ? "共 <b>" + list.length + "</b> 家" + (summerOnlyEnabled() ? "已收录暑期批机构" : "机构")
-      : "筛出 <b>" + list.length + "</b> 家 · " + baseLabel);
+      : "筛出 <b>" + list.length + "</b> 家 · " + baseLabel) + discTxt + subTxt;
     $("#emptyState").hidden = list.length > 0;
 
     var box = $("#companyList");
@@ -704,6 +1138,9 @@
     DATA.companies.forEach(function (x) { if (x.id === id) c = x; });
     if (!c) return;
     var st = statusOf(c);
+    var discText = discLabels(c).join(" / ") +
+      (c.discInferred ? "（自动归类；带「加分」表示经管岗位的通用描述，非该学科专门岗位，仅供参考）" : "");
+    var subText = (c.subdirs || []).slice(0, 6).join(" / ");
     function row(k, v) { return v ? "<dt>" + k + "</dt><dd>" + esc(v) + "</dd>" : ""; }
     // 没有内容的区块直接不渲染，避免详情页出现「空标题 + 什么都不显示」
     function sec(title, body) {
@@ -718,8 +1155,9 @@
         '<div class="card-batches">' + batchesHTML(c) + "</div></div>" +
       sec("🧭 机构信息", row("主营业务", c.biz) + row("适合投递方向", c.jobs) +
         row("规模量级", c.scale ? "≈ " + c.scale + "（按公开信息粗判，非精确人数）" : "") + row("备注", c.note)) +
-      sec("🎓 用人要求", row("学历要求", c.degree) + row("专业方向", c.major) + row("证书", c.certs) +
-        row("技能", c.skills) + row("英语", c.english)) +
+      sec("🎓 用人要求", row("学历要求", c.degree) + row("专业方向", c.major) +
+        row("适合学科", discText) + row("细分方向", subText) +
+        row("证书", c.certs) + row("技能", c.skills) + row("英语", c.english)) +
       sec("📝 考核流程", row("笔试", c.writtenTest) + row("面试", c.interviews)) +
       sec("💰 待遇与留用", row("薪资", c.salary) + row("食宿", c.housing) + row("留用", c.retention)) +
       '<div class="detail-section"><h4>📨 投递与内推渠道</h4><dl class="detail-grid">' +
@@ -750,8 +1188,14 @@
   }
   function renderTimeline() {
     var cat = $("#timelineCategory").value;
+    var discSel = $("#timelineDiscipline");
+    var disc = discSel ? discSel.value : "";
     var bounds = timelineBounds();
-    var list = DATA.companies.filter(function (c) { return !cat || inCat(c, cat); });
+    var list = DATA.companies.filter(function (c) {
+      if (cat && !inCat(c, cat)) return false;
+      if (disc && !inDiscFilter(c, disc)) return false;
+      return true;
+    });
     list = list.filter(function (c) { return companyWindows(c).length > 0; });
     var months = [];
     for (var m = new Date(bounds.start.getTime()); m <= bounds.end; m.setMonth(m.getMonth() + 1)) {
@@ -985,9 +1429,9 @@
   function applySeasonUI() {
     var summer = activeSeason === "summer";
     document.documentElement.dataset.season = activeSeason;
-    document.title = "金融实习网申通 · 2027 " + (summer ? "暑假实习" : "寒假实习");
+    document.title = "实习网申通 · 2027 " + (summer ? "暑假实习" : "寒假实习");
     var subtitle = $("#seasonSubtitle");
-    if (subtitle) subtitle.textContent = "Finance Internship Tracker · 2027 " + (summer ? "暑假实习" : "寒假实习");
+    if (subtitle) subtitle.textContent = "Internship Tracker · 2027 " + (summer ? "暑假实习" : "寒假实习") + " · 12 个学科方向";
     $$("#seasonSwitch button").forEach(function (b) {
       b.classList.toggle("on", b.dataset.season === activeSeason);
       b.setAttribute("aria-pressed", b.dataset.season === activeSeason ? "true" : "false");
@@ -1008,6 +1452,9 @@
     if (batchFilter) batchFilter.value = "";
     applySeasonUI();
     renderCategories();
+    renderDisciplines();
+    renderSubDirs();
+    updateFacetCounts();
     $("#cityFilter").value = filters.city;
     renderStatStrip();
     renderAlert();
@@ -1063,23 +1510,55 @@
     });
     $("#searchBox").oninput = function () { filters.q = this.value.trim(); renderList(); };
     $("#categoryFilters").onclick = function (e) {
-      if (!e.target.classList.contains("chip")) return;
-      e.target.classList.toggle("active");
+      var b = e.target.closest(".chip");
+      if (!b) return;
+      b.classList.toggle("active");
       filters.cats = $$("#categoryFilters .chip.active").map(function (x) { return x.dataset.cat; });
+      updateFacetCounts();
+      renderList();
+    };
+    $("#disciplineFilters").onclick = function (e) {
+      var b = e.target.closest(".chip");
+      if (!b) return;
+      var d = b.dataset.disc;
+      if (!d) filters.disc = [];
+      else {
+        var i = filters.disc.indexOf(d);
+        if (i >= 0) filters.disc.splice(i, 1);
+        else filters.disc.push(d);
+      }
+      filters.sub = "";       // 换学科后细分方向重置
+      renderDisciplines();   // 重建高亮与「全部」态
+      renderSubDirs();
+      updateFacetCounts();   // 行业 chip 的家数跟随学科变化
+      renderList();
+    };
+    var subBox = $("#subFilters");
+    if (subBox) subBox.onclick = function (e) {
+      var b = e.target.closest(".chip");
+      if (!b) return;
+      var s = b.dataset.sub || "";
+      filters.sub = (filters.sub === s) ? "" : s;
+      renderSubDirs();
+      updateFacetCounts();
       renderList();
     };
     ["cityFilter", "batchFilter", "degreeFilter", "testFilter", "cityHZFilter", "statusFilter"].forEach(function (id) {
       $("#" + id).onchange = function () {
         var map = { cityFilter: "city", batchFilter: "batch", degreeFilter: "degree", testFilter: "test", cityHZFilter: "hz", statusFilter: "status" };
         filters[map[id]] = this.value;
+        updateFacetCounts();
         renderList();
       };
     });
     $("#resetFilters").onclick = function () {
-      filters = { q: "", cats: [], city: "", batch: "", degree: "", test: "", hz: "", status: "" };
+      filters = { q: "", cats: [], disc: [], sub: "", city: "", batch: "", degree: "", test: "", hz: "", status: "" };
       $("#searchBox").value = "";
       $$("#categoryFilters .chip.active").forEach(function (x) { x.classList.remove("active"); });
+      renderDisciplines();
+      renderSubDirs();
       ["cityFilter", "batchFilter", "degreeFilter", "testFilter", "cityHZFilter", "statusFilter"].forEach(function (id) { $("#" + id).value = ""; });
+      updateFacetCounts();
       renderList();
     };
     $("#companyList").onclick = function (e) {
@@ -1114,6 +1593,7 @@
     $("#modalMask").onclick = closeModal;
     document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeModal(); });
     $("#timelineCategory").onchange = renderTimeline;
+    if ($("#timelineDiscipline")) $("#timelineDiscipline").onchange = renderTimeline;
     $("#timelineWrap").onclick = function (e) {
       var b = e.target.closest("[data-goto]");
       if (b) openDetail(b.dataset.goto);
@@ -1125,8 +1605,16 @@
     var now = new Date();
     $("#todayText").textContent = "今天是 " + now.getFullYear() + " 年 " + (now.getMonth() + 1) + " 月 " + now.getDate() + " 日";
     $("#updatedAt").textContent = DATA.updatedAt || "整理中";
-    // 数据行补 id
-    DATA.companies.forEach(function (c, i) { if (!c.id) c.id = "c" + i; applyDefaults(c); });
+    // 数据行补 id；新条目自带学科，老条目按主营/专业/技能推断（详情里会标注）
+    DATA.companies.forEach(function (c, i) {
+      if (!c.id) c.id = "c" + i;
+      applyDefaults(c);
+      if (!c.disciplines || !c.disciplines.length) {
+        c.disciplines = inferDisciplines(c);
+        c.discInferred = true;
+      }
+      if (!c.subdirs || !c.subdirs.length) c.subdirs = inferSubdirs(c);
+    });
     applySeasonUI();
     var fromHash = hashToFilters();   // 从网址恢复筛选（要在 renderCategories 之前，chip 高亮依赖 filters.cats）
     var lv = $("#legendVerifiedDate");
@@ -1145,11 +1633,16 @@
       $("#testFilter").value = filters.test;
       $("#cityHZFilter").value = filters.hz;
       $("#statusFilter").value = filters.status;
+      renderDisciplines();
+      renderSubDirs();
+      updateFacetCounts();
       renderList();
     });
     try { kanbanCat = JSON.parse(localStorage.getItem(LS_KEY + "_kanbanCat")) || {}; } catch (e) { kanbanCat = {}; }
     // 只渲染首屏可见的「公司库」；其余 4 个页签等用户点过去再渲染（见 ensureTab）
     renderCategories();
+    renderDisciplines();
+    renderSubDirs();
     renderAlert();
     renderList();
     bindEvents();
@@ -1208,6 +1701,8 @@
       };
       reader.readAsText(file);
     };
+    // 供外壳的「搜索直达」与档案预填使用：init 完成后才允许派发筛选事件
+    window.__INTERN_READY__ = true;
   }
   document.addEventListener("DOMContentLoaded", boot);
 
@@ -1314,7 +1809,9 @@
       else if (n > 60) clearInterval(t);
     }, 250);
   }
-  ready(function () {
+  function applyProfile() {
+    // 等模块 init 绑定完筛选事件再派发，否则「搜索直达」只填了输入框、列表没筛
+    if (!window.__INTERN_READY__) { setTimeout(applyProfile, 150); return; }
     try {
       var p = JSON.parse(localStorage.getItem("hub_profile_v1") || "null");
       if (p && p.region) {
@@ -1331,5 +1828,6 @@
         if (c && sb) { sb.value = c.name; sb.dispatchEvent(new Event("input")); }
       }
     } catch (e) {}
-  });
+  }
+  ready(applyProfile);
 })();
