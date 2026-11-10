@@ -16,7 +16,7 @@ const EXAM_FILES = {
   '浙江省考': ['zhejiang2027.json', 'zhejiang2026.json', 'zhejiang2026_b.json'],
   '山东省考': ['shandong2026.json', 'shandong2026_b.json', 'shandong2026_c.json', 'shandong2026_d.json'],
   '上海市考': ['shanghai2026.json', 'shanghai2026_b.json'],
-  '江苏省考': ['jiangsu2027.json'], '广东省考': ['guangdong2027.json'], '北京市考': ['beijing2027.json'], '福建省考': ['fujian2026.json'], '安徽省考': []
+  '江苏省考': ['jiangsu2027.json'], '广东省考': ['guangdong2027.json'], '北京市考': ['beijing2027.json'], '福建省考': ['fujian2026.json'], '安徽省考': ['anhui2026.json']
 };
 const fileCache = new Map();
 function checkedExams() {
