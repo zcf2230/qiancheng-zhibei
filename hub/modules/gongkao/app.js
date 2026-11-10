@@ -38,7 +38,22 @@ async function readJson(url) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 60000);
   try {
-    const r = await fetch(url, { cache: 'default', signal: ctrl.signal });
+    // 逐岗 JSON 已压成 .gz（包体从 64MB 降到 4MB 左右）；
+    // 若托管层自动按 Content-Encoding 解压，arrayBuffer 会直接是 JSON 文本。
+    let r = await fetch(url + '.gz', { cache: 'default', signal: ctrl.signal });
+    if (r.ok) {
+      const buf = await r.arrayBuffer();
+      const bytes = new Uint8Array(buf);
+      if (bytes[0] === 0x1f && bytes[1] === 0x8b) {
+        if (typeof DecompressionStream === 'undefined') throw new Error('浏览器不支持 gzip 解压');
+        const text = await new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+        return JSON.parse(text);
+      }
+      return JSON.parse(new TextDecoder().decode(buf));
+    }
+    if (r.status !== 404) { const e = new Error('HTTP ' + r.status); e.missing = false; throw e; }
+    // 兼容旧本地文件/未压缩部署
+    r = await fetch(url, { cache: 'default', signal: ctrl.signal });
     if (!r.ok) { const e = new Error('HTTP ' + r.status); e.missing = (r.status === 404); throw e; }
     return await r.json();
   } catch (e) {
@@ -1425,7 +1440,7 @@ function toggleFav(uid) {
 
 /* 前程指北：档案预填与搜索定位 */
 (function () {
-  // 与 shared/search-index.js 的 g 类 id 同口径：32 位 FNV-1a → base36
+  // 与 shared/search-index.json.gz 的 g 类 id 同口径：32 位 FNV-1a → base36
   function hashCode(s) {
     var h = 2166136261;
     for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }

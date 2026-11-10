@@ -28,6 +28,7 @@ hub/                 站点源码（Qoder Sites 部署目录）
 functions/           预留的云端收藏 Functions（待后端配额启用）
 db/schema.sql        预留的收藏表结构
 tools/serve-hub.js   本地开发服务器（node tools/serve-hub.js，端口 8123）
+data-src/            考公逐岗 JSON 与搜索索引源文件（发布前 node tools/build-gzip.mjs 压到 hub/）
 contest/             天池参赛帖与截图
 ```
 

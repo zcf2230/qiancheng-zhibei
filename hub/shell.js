@@ -846,13 +846,24 @@
   function ensureSearchIndex() {
     if (window.HUB_SEARCH) return Promise.resolve(window.HUB_SEARCH);
     if (searchIndexPromise) return searchIndexPromise;
-    searchIndexPromise = new Promise(function (res, rej) {
-      var s = document.createElement('script');
-      s.src = 'shared/search-index.js?v=20261110c';
-      s.onload = function () { res(window.HUB_SEARCH || []); };
-      s.onerror = function () { searchIndexPromise = null; rej(new Error('search-index load failed')); };
-      document.head.appendChild(s);
-    });
+    searchIndexPromise = fetch('shared/search-index.json.gz?v=20261110d', { cache: 'default' })
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.arrayBuffer();
+      })
+      .then(function (buf) {
+        var bytes = new Uint8Array(buf);
+        if (bytes[0] === 0x1f && bytes[1] === 0x8b) {
+          if (typeof DecompressionStream === 'undefined') throw new Error('浏览器不支持 gzip 解压');
+          return new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+        }
+        return new TextDecoder().decode(buf);
+      })
+      .then(function (txt) {
+        window.HUB_SEARCH = JSON.parse(txt);
+        return window.HUB_SEARCH;
+      })
+      .catch(function (e) { searchIndexPromise = null; throw e; });
     return searchIndexPromise;
   }
   var RECENT_KEY = 'hub_recent_v1';
