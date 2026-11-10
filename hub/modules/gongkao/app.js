@@ -667,6 +667,7 @@ function renderAnalysis() {
         ${o.ratioBasis ? `竞争比口径：${esc(o.ratioBasis)}<br>` : ''}
         ${o.totalPositions ? `职位 <b>${esc(o.totalPositions)}</b> 个<br>` : ''}
         本库收录岗位 ${posCount} 个，其中金融可报 ${finCount} 个
+        ${o.partial ? `<br><span class="warn">${esc(o.partialNote || '部分收录')}</span>` : ''}
       </div>
     </div>`;
   }).join('');

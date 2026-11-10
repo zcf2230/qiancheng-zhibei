@@ -302,7 +302,7 @@
         '</article>' +
         '<figure class="fp-photo" data-ui><img src="assets/ui/ui-kaoyan.png" alt="考研择校模块真实界面：院校列表、筛选与冲稳保分档" width="800" height="520" loading="eager" decoding="async"><figcaption>考研择校 · 院校列表与分档（站内真实界面）</figcaption></figure>' +
         '<aside class="fp-rail">' +
-          '<div class="fp-stat"><b data-n="211">0</b><span>所金融考研院校</span></div>' +
+          '<div class="fp-stat"><b data-n="211">0</b><span>所金融院校 · 31 专业大类</span></div>' +
           '<div class="fp-stat"><b data-n="79599">0</b><span>个考公岗位</span></div>' +
           '<div class="fp-stat"><b data-n="1064">0</b><span>家实习机构</span></div>' +
           '<div class="fp-stat"><b data-n="40">0</b><span>个时间线节点</span></div>' +
@@ -589,7 +589,7 @@
       { t: '市场里的业务骨干 / 管理者', s: { intern: 3 } } ] }
   ];
   var PATH_INFO = {
-    kaoyan: { name: '考研', why: '你倾向学历平台与深度备考，金融考研的择校信息能帮你把目标定准。', next: '下一步：用「考研择校」填预估分做冲稳保分档，圈定 3~5 所目标院校。', href: '#/kaoyan' },
+    kaoyan: { name: '考研', why: '你倾向学历平台与深度备考，考研择校（含金融等 31 个专业大类）能帮你把目标定准。', next: '下一步：用「考研择校」填预估分做冲稳保分档，圈定 3~5 所目标院校。', href: '#/kaoyan' },
     gongkao: { name: '考公', why: '你重视稳定与确定性，岗位竞争度数据能帮你避开百里挑一的坑位。', next: '下一步：用「考公岗位」按专业 + 学历筛岗，看竞争比与进面分再决定报哪类。', href: '#/gongkao' },
     intern: { name: '实习', why: '你更信真实经验与多线机会，先把网申投起来，成本最低。', next: '下一步：用「实习网申」看当前开放批次，按倒计时排投递顺序。', href: '#/intern' }
   };
@@ -976,7 +976,7 @@
     var st = window.HUB_STATS || {};
     var meta = MODULE_META[name];
     var stat = '';
-    if (name === 'kaoyan') stat = '211 所院校 · 2027 简章已核对';
+    if (name === 'kaoyan') stat = '211 所金融院校 · 31 专业大类';
     else if (name === 'gongkao') stat = '79,599 个岗位 · 快照 ' + (st.gkSnapshot || st.generatedAt || '');
     else if (name === 'intern') stat = (st.internOpen || 0) + ' 家开放中' + (st.internClosing7 ? ' · 本周截止 ' + st.internClosing7 + ' 家' : '');
     return '<div class="module-bar"><button class="menu-btn" type="button" aria-label="打开导航菜单">☰</button><span class="dot"></span><b>' + meta.name + '</b><span class="stat">' + esc(stat) + '</span>' +
