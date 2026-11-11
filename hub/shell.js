@@ -228,7 +228,7 @@
     });
     if (st.gkStatDate) out.push(['考公岗位', '国考过审 ' + (st.gkPassed || 0).toLocaleString('en-US') + ' 人（' + st.gkStatDate + '）']);
     if (st.ky2027) out.push(['考研择校', '2027 简章覆盖 ' + st.ky2027 + '/' + st.kyTotal + ' 所']);
-    out.push(['全局搜索', '83,841 条索引覆盖三条路']);
+    out.push(['全局搜索', '87,104 条索引覆盖三条路']);
     return out;
   }
 
@@ -304,8 +304,8 @@
         '<aside class="fp-rail">' +
           '<div class="fp-stat"><b data-n="211">0</b><span>所金融院校 · 31 专业大类</span></div>' +
           '<div class="fp-stat"><b data-n="81182">0</b><span>个考公岗位</span></div>' +
-          '<div class="fp-stat"><b data-n="2448">0</b><span>家实习机构 · 12 个学科方向</span></div>' +
-          '<div class="fp-stat"><b data-n="40">0</b><span>个时间线节点</span></div>' +
+          '<div class="fp-stat"><b data-n="' + ((window.HUB_STATS || {}).internTotal || 2493) + '">0</b><span>家实习机构 · 12 个学科方向</span></div>' +
+          '<div class="fp-stat"><b data-n="' + ((window.HUB_TIMELINE || []).length || 40) + '">0</b><span>个时间线节点</span></div>' +
         '</aside>' +
       '</div></section>' +
 
@@ -334,7 +334,7 @@
 
       '<section class="section reveal"><div class="section-head"><div><div class="section-kicker">How</div><h2>三步用起来</h2></div></div>' +
       '<div class="how-grid">' +
-        '<figure class="how-photo" data-ui><img src="assets/ui/ui-search.png" alt="全局搜索真实界面：一个搜索框同时命中院校、岗位与机构" width="800" height="520" loading="lazy" decoding="async"><figcaption>全局搜索 · 83,841 条索引一个框命中（站内真实界面）</figcaption></figure>' +
+        '<figure class="how-photo" data-ui><img src="assets/ui/ui-search.png" alt="全局搜索真实界面：一个搜索框同时命中院校、岗位与机构" width="800" height="520" loading="lazy" decoding="async"><figcaption>全局搜索 · 87,104 条索引一个框命中（站内真实界面）</figcaption></figure>' +
         '<ol class="how-steps">' +
           '<li><b>答十题</b><p>路径决策十题给出主推荐、维度理由与备选，结果可分享、可打印。</p></li>' +
           '<li><b>看窗口</b><p>统一时间线把三条路的关键节点对齐，确认本周该动手的事与剩余天数。</p></li>' +
@@ -878,7 +878,7 @@
     var q0 = decodeURIComponent((query.match(/q=([^&]*)/) || [])[1] || '');
     el.innerHTML =
       '<div class="page-head"><div class="page-kicker">Search</div><h2 class="page-title">全局搜索</h2>' +
-      '<p class="page-sub">一个搜索框同时命中考研院校、考公岗位与实习机构，共 83,841 条索引；点击结果直达模块并自动定位。</p></div>' +
+      '<p class="page-sub">一个搜索框同时命中考研院校、考公岗位与实习机构，共 87,104 条索引；点击结果直达模块并自动定位。</p></div>' +
       '<div class="palette"><input id="searchInput" type="search" placeholder="搜院校 / 招录机关 / 职位 / 公司，如：北大 税务局 中信" value="' + esc(q0) + '"><kbd>ESC 清空</kbd></div>' +
       '<div id="searchResults" aria-live="polite"></div>';
     var input = el.querySelector('#searchInput');
@@ -922,7 +922,7 @@
         var show = groups[t].slice(0, 12);
         html += '<div class="sr-group"><h3>' + names[t] + '（' + groups[t].length + (groups[t].length > show.length ? '+' : '') + '）</h3>' +
           show.map(function (e) {
-            return '<a class="sr-item" href="#/' + SEARCH_ROUTE[t] + '?focus=' + encodeURIComponent(e.id) + '"><b>' + markHit(e.n, q, qq) + '</b><small>' + esc(e.s) + '</small></a>';
+            return '<a class="sr-item" href="#/' + SEARCH_ROUTE[t] + '?focus=' + encodeURIComponent(e.id) + (e.m ? '&major=' + encodeURIComponent(e.m) : '') + '"><b>' + markHit(e.n, q, qq) + '</b><small>' + esc(e.s) + '</small></a>';
           }).join('') + '</div>';
       });
       box.innerHTML = html;
@@ -976,7 +976,7 @@
       '<li>考公：国考报名期统计每天自动检查官方专题一次，有新通报自动写回并提示。</li>' +
       '<li>实习：官网链接程序化巡检，时间窗按往年规律推算并明确标注。</li>' +
       '</ul><p>收藏与投递进度保存在本机浏览器，不收集任何个人数据；换设备可用各模块内「导出 / 导入备份」迁移。</p></div></div>' +
-      '<div class="about-sec reveal"><h3>技术选型</h3><div><p>无框架原生实现：外壳 hash 路由 + iframe 沙箱、构建期生成的统一时间线（36 条）与全局搜索索引（83,841 条，含简称表与子序列匹配）、十题路径决策、三轨规划报告打印、可打印择校报告与 CSV 导出。全站静态资源 + 边缘缓存，打开即用。</p></div></div>' +
+      '<div class="about-sec reveal"><h3>技术选型</h3><div><p>无框架原生实现：外壳 hash 路由 + iframe 沙箱、构建期生成的统一时间线（40 条）与全局搜索索引（87,104 条，含简称表与子序列匹配）、十题路径决策、三轨规划报告打印、可打印择校报告与 CSV 导出。全站静态资源 + 边缘缓存，打开即用。</p></div></div>' +
       '<div class="letter reveal"><p>三岔路没有标准答案，只有看清之后自己选的那条。如果这个站能让你在某个路口少一点迷茫、少踩一个坑、多赶上一次截止日期，它就没有白做。愿你的每一个选择，都通向光明的未来。</p>' +
       '<p class="sig" style="font-size:14px">数据问题、功能建议或任何疑问，随时联系作者：邮箱 <a href="mailto:3426493108@qq.com">3426493108@qq.com</a> · 微信 Zaiayn。</p></div>';
     bindReveal(el);
@@ -995,6 +995,48 @@
       '<a class="back" href="#/home">返回首页</a></div>';
   }
 
+  /* 首页空闲时预热三个模块的入口资源（HTML/JS/CSS，不含数据）：点进模块时只剩数据请求。
+   * 资源清单从模块 HTML 里现读——JS/CSS 带 ?v= 版本号，写死在外壳里一定会和真实请求对不上。
+   * 省流量场景（saveData / 2g）直接跳过。 */
+  var warmed = false;
+  function isDataUrl(u) {
+    return /\.(json|gz)(\?|$)/i.test(u) || /\/data\//i.test(u) || /(^|\/)data[^/]*\.js(\?|$)/i.test(u);
+  }
+  function frameUrl(name, query) {
+    return FRAME_SRC[name] + '?' + (query ? query + '&' : '') + 'hubtheme=' + themePref();
+  }
+  function warmModules() {
+    if (warmed) return;
+    var conn = navigator.connection || navigator.mozConnection || {};
+    if (conn.saveData || (conn.effectiveType && !/^3g|^4g/.test(conn.effectiveType))) return;
+    warmed = true;
+    Object.keys(FRAME_SRC).forEach(function (name) {
+      /* 用和 mountFrame 完全一致的地址预热，否则带 hubtheme 参数的请求命不中缓存 */
+      var url = frameUrl(name);
+      /* HTML 必须取新的：拿到旧副本就会去预热已经不存在的资源（比如已改成按需加载的 xlsx） */
+      fetch(url, { cache: 'reload' }).then(function (r) { return r.text(); }).then(function (html) {
+        var doc = new DOMParser().parseFromString(html, 'text/html');
+        var base = new URL(url, location.href).href;
+        doc.querySelectorAll('script[src], link[href]').forEach(function (n) {
+          var u = n.getAttribute('src') || n.getAttribute('href');
+          if (!u || /^(https?:)?\/\//.test(u) || /^data:/.test(u)) return;
+          var abs = new URL(u, base).href;
+          if (isDataUrl(abs)) return;
+          fetch(abs, { cache: 'default' }).catch(function () {});
+        });
+      }).catch(function () {});
+    });
+  }
+  function scheduleWarm() {
+    /* 别和首页自身的字体/动效抢带宽：等页面彻底空下来再预热 */
+    var go = function () {
+      if (typeof requestIdleCallback === 'function') requestIdleCallback(warmModules, { timeout: 6000 });
+      else warmModules();
+    };
+    if (document.readyState === 'complete') setTimeout(go, 2000);
+    else window.addEventListener('load', function () { setTimeout(go, 2000); });
+  }
+
   function mountFrame(name, el, query) {
     var wrap = document.createElement('div');
     wrap.className = 'frame-wrap';
@@ -1003,10 +1045,10 @@
     frame.className = 'hub-frame';
     frame.title = name;
     frame.loading = 'lazy';
-    frame.dataset.src = FRAME_SRC[name] + '?' + (query ? query + '&' : '') + 'hubtheme=' + themePref();
-    /* 转场进行中先不解析 iframe，避免同源 iframe 的解析/渲染和翻页动画抢主线程 */
-    var startFrame = function () { if (!frame.getAttribute('src')) frame.src = frame.dataset.src; };
-    if (document.body.classList.contains('peeling')) setTimeout(startFrame, 640); else startFrame();
+    frame.dataset.src = frameUrl(name, query);
+    /* 立刻开始加载：掀角转场还有约 0.5s 才揭开，iframe 的网络请求与解析正好藏在这段时间里。
+     * 之前为了「别和转场抢主线程」延后 640ms 才给 src，结果揭开时模块还没开始下载，白等一秒多。 */
+    frame.src = frame.dataset.src;
     var skel = document.createElement('div');
     skel.className = 'frame-skel';
     skel.setAttribute('aria-hidden', 'true');
@@ -1016,8 +1058,8 @@
     el.appendChild(wrap);
     frame.addEventListener('load', function () {
       frame.classList.add('ready');
-      /* 考研的数据是异步 fetch 的，load 时列表还没渲染：等 hub-module-ready 再撤骨架 */
-      if (name === 'kaoyan') setTimeout(function () { if (skel.parentNode) skel.remove(); }, 2600);
+      /* 考研的数据是异步 fetch 的，load 时列表还没渲染：正常靠 hub-module-ready 撤骨架，这里只兜底 */
+      if (name === 'kaoyan') setTimeout(function () { if (skel.parentNode) skel.remove(); }, 1800);
       else if (skel.parentNode) skel.remove();
       try {
         frame.contentWindow.postMessage({ type: 'hub-theme', theme: themePref() }, location.origin);
@@ -1234,6 +1276,7 @@
     }
     document.body.setAttribute('data-route', (location.hash || '#/home').replace(/^#\/?/, '').split('?')[0] || 'home');
     render();
+    scheduleWarm();
   });
   window.addEventListener('hashchange', navigate);
 })();

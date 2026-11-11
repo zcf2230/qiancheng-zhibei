@@ -46,7 +46,7 @@ let VIEW = 'query';
 let SCORE = null;              // 分数匹配：用户输入的预估总分
 
 /* ---------- 多专业大类（方案A）：每个大类独立数据目录，金融保持默认 ---------- */
-const DATA_VERSION = 5;
+const DATA_VERSION = 7;
 const MAJORS = {
   fin:  { label: '金融',           z: '金融专硕',           x: '金融学硕',         zCode: '0251',   xCode: '0202', cat: '经济学', dir: '',     math: [['396', '考396经综'], ['数学三', '考数学三']] },
   cs:   { label: '计算机/电子信息', z: '计算机专硕',         x: '计算机学硕',       zCode: '0854',   xCode: '0812', cat: '工学',   dir: 'cs/',  math: [['数学一', '考数一'], ['数学二', '考数二'], ['408', '考408']] },
@@ -58,12 +58,12 @@ const MAJORS = {
   jmc:  { label: '新闻与传播',      z: '新传专硕',           x: '新闻传播学硕',     zCode: '0552',   xCode: '0503', cat: '文学',   dir: 'jmc/', math: [] },
   phil: { label: '哲学', z: '应用伦理专硕', x: '哲学学硕', zCode: '0151', xCode: '0101', cat: '哲学', dir: 'phil/', math: [] },
   hist: { label: '历史学', z: '博物馆专硕', x: '历史学学硕', zCode: '0651', xCode: '0602', cat: '历史学', dir: 'hist/', math: [] },
-  sci:  { label: '理学(数理化生)', z: '理学专硕', x: '理学学硕', zCode: '0701', xCode: '0701', cat: '理学', dir: 'sci/', math: [] },
+  sci:  { label: '理学(数理化生)', z: '', x: '理学学硕(数/物/化/生)', zCode: '', xCode: '0701/0702/0703/0710', cat: '理学', dir: 'sci/', math: [] },
   agr:  { label: '农学', z: '农学专硕', x: '农学学硕', zCode: '0951', xCode: '0901', cat: '农学', dir: 'agr/', math: [] },
   med:  { label: '临床医学', z: '临床医学专硕', x: '临床医学学硕', zCode: '1051', xCode: '1002', cat: '医学', dir: 'med/', math: [] },
   nur:  { label: '护理', z: '护理专硕', x: '护理学硕', zCode: '1054', xCode: '1011', cat: '医学', dir: 'nur/', math: [] },
   pharm:{ label: '药学', z: '药学专硕', x: '药学学硕', zCode: '1055', xCode: '1007', cat: '医学', dir: 'pharm/', math: [] },
-  art:  { label: '艺术(音乐/美术/设计)', z: '艺术专硕', x: '艺术学硕', zCode: '1352', xCode: '1301', cat: '艺术学', dir: 'art/', math: [] },
+  art:  { label: '艺术(音乐/美术/设计)', z: '艺术专硕', x: '艺术学硕', zCode: '1352~1357', xCode: '1301', cat: '艺术学', dir: 'art/', math: [] },
   mba:  { label: '工商管理MBA', z: 'MBA专硕', x: '', zCode: '1251', xCode: '', cat: '管理学', dir: 'mba/', math: [] },
   mpa:  { label: '公共管理MPA', z: 'MPA专硕', x: '', zCode: '1252', xCode: '', cat: '管理学', dir: 'mpa/', math: [] },
   mem:  { label: '工程管理MEM', z: 'MEM专硕', x: '', zCode: '1256', xCode: '', cat: '管理学', dir: 'mem/', math: [] },
@@ -76,9 +76,9 @@ const MAJORS = {
   ce:   { label: '土木水利', z: '土木水利专硕', x: '土木学硕', zCode: '0859', xCode: '0814', cat: '工学', dir: 'ce/', math: [['数学一', '考数一']] },
   se:   { label: '软件工程', z: '软件专硕', x: '软件学硕', zCode: '085405', xCode: '0835', cat: '工学', dir: 'se/', math: [['数学一', '考数一'], ['408', '考408']] },
   mti:  { label: '翻译硕士', z: '翻译专硕', x: '翻译学硕', zCode: '0551', xCode: '0502', cat: '文学', dir: 'mti/', math: [] },
-  cll:  { label: '中国语言文学', z: '中文专硕', x: '中国语言文学学硕', zCode: '0501', xCode: '0501', cat: '文学', dir: 'cll/', math: [] },
+  cll:  { label: '中国语言文学', z: '', x: '中国语言文学学硕', zCode: '', xCode: '0501', cat: '文学', dir: 'cll/', math: [] },
   psy:  { label: '应用心理', z: '应用心理专硕', x: '心理学学硕', zCode: '0454', xCode: '0402', cat: '教育学', dir: 'psy/', math: [] },
-  soc:  { label: '社会学/政治学/马克思', z: '社会学专硕', x: '社会学学硕', zCode: '0303', xCode: '0303', cat: '法学', dir: 'soc/', math: [] }
+  soc:  { label: '社会学/政治学/马克思', z: '社会工作专硕', x: '社会学/政治学/马克思学硕', zCode: '0352', xCode: '0303/0302/0305', cat: '法学', dir: 'soc/', math: [] }
 };
 let CUR_MAJOR = 'fin';
 const majorCfg = () => MAJORS[CUR_MAJOR] || MAJORS.fin;
@@ -87,8 +87,12 @@ const progCodeName = key => { const c = key === 'z' ? majorCfg().zCode : majorCf
 const noFinText = () => `未查到${majorCfg().label}硕士招生`;
 function rebuildMajorUI() {
   const fp = $('#fProgram'); const cur = fp.value;
-  fp.innerHTML = `<option value="z">${progName('z')}</option>` + (majorCfg().x ? `<option value="x">${progName('x')}</option>` : '') + `<option value="">两者都看</option>`;
-  fp.value = [...fp.options].some(o => o.value === cur) ? cur : 'z';
+  /* 只列出该大类真实存在的学位侧：理学/中文等只有学硕，默认就落到学硕，
+   * 否则默认停在空的「专硕」上，几百所院校一所都看不见 */
+  const hasZ = !!majorCfg().z, hasX = !!majorCfg().x;
+  fp.innerHTML = (hasZ ? `<option value="z">${progName('z')}</option>` : '') + (hasX ? `<option value="x">${progName('x')}</option>` : '') + `<option value="">两者都看</option>`;
+  const fallback = hasZ ? 'z' : (hasX ? 'x' : '');
+  fp.value = [...fp.options].some(o => o.value === cur) ? cur : fallback;
   const fs2 = $('#fMath'); const mv = fs2.value;
   fs2.innerHTML = '<option value="">初试科目不限</option>' + majorCfg().math.map(([v, l]) => `<option value="${v}">${l}</option>`).join('');
   fs2.value = [...fs2.options].some(o => o.value === mv) ? mv : '';
@@ -334,28 +338,37 @@ function filteredSchools() {
   const onlyFav = $('#fFav').checked;
   const complete = $('#fComplete') ? $('#fComplete').value : '';
   const onlyFit = $('#fFit') ? $('#fFit').checked : false;
-  const progKey = $('#fProgram').value || 'z';
+  const progKey = $('#fProgram').value;   // '' = 两者都看（不能 || 'z'，否则该选项永远等于专硕）
   const score = SCORE;
+  // 两侧都看时，筛选/排序按「任一侧满足」与「优先专硕侧」处理
+  const sides = s => progKey ? [s[progKey] || {}] : [s.z, s.x].filter(Boolean);
+  const P = s => (progKey ? s[progKey] : (s.z || s.x)) || {};
 
   let list = DATA.schools.filter(s => {
+    /* 选定专硕/学硕侧时，只显示该侧真有数据的院校。
+     * 官方专业库按专业分别维护，同一所学校常常只有一侧在库；
+     * 不过滤就会列出一堆「待核实」空卡，且计数虚高。看全部用「两者都看」。 */
+    if (progKey) {
+      const p = s[progKey];
+      if (!p || !(p.m || p.j || p.l || p.f || p.e || p.nt)) return false;
+    }
     if (prov && s.prov !== prov) return false;
     if (tag && !(s.tags || []).includes(tag)) return false;
     if (onlyFav && !FAV.has(s.id)) return false;
     if (kw && !(s.name.toLowerCase().includes(kw) || (s.city || '').toLowerCase().includes(kw))) return false;
     if (math) {
-      const p = s[progKey] || {};
-      if (!matchMath(p.m || '', math)) return false;
+      if (!sides(s).some(p => matchMath(p.m || '', math))) return false;
     }
     if (complete) {
-      const p = s[progKey] || {};
-      if (complete === 'line' && !(p.l && Object.keys(p.l).length)) return false;
-      if (complete === 'fee' && !(p.f && !/待核实/.test(p.f))) return false;
-      if (complete === 'enroll' && !p.e) return false;
-      if (complete === 'rich' && filledCount(s) < 5) return false;
+      const ok = p => (complete === 'line' ? !!(p.l && Object.keys(p.l).length)
+        : complete === 'fee' ? !!(p.f && !/待核实/.test(p.f))
+        : complete === 'enroll' ? !!p.e
+        : filledCount(s) >= 5);
+      if (!sides(s).some(ok)) return false;
     }
     if (onlyFit && score != null) {
-      const m = matchOf(parseLineVal(s[progKey] || {}), score);
-      if (!m || m.diff < 0) return false;
+      const diffs = sides(s).map(p => matchOf(parseLineVal(p), score)).filter(Boolean).map(m => m.diff);
+      if (!diffs.length || Math.max(...diffs) < 0) return false;
     }
     return true;
   });
@@ -364,15 +377,15 @@ function filteredSchools() {
   const cmpDefault = (a, b) => (PROVS.indexOf(a.prov) - PROVS.indexOf(b.prov)) || (w(a) - w(b)) || a.name.localeCompare(b.name, 'zh');
   const cmps = {
     default: cmpDefault,
-    line: (a, b) => (parseLineVal(b[progKey] || {}) ?? -1) - (parseLineVal(a[progKey] || {}) ?? -1),
+    line: (a, b) => (parseLineVal(P(b)) ?? -1) - (parseLineVal(P(a)) ?? -1),
     // 学费：先按口径折算成全程总额再比，避免「元/年」和「万/全程」直接比大小
-    fee: (a, b) => feeTotalWan(a[progKey] || {}) - feeTotalWan(b[progKey] || {}),
-    enroll: (a, b) => (parseCount((b[progKey] || {}).e) ?? -1) - (parseCount((a[progKey] || {}).e) ?? -1),
+    fee: (a, b) => feeTotalWan(P(a)) - feeTotalWan(P(b)),
+    enroll: (a, b) => (parseCount(P(b).e) ?? -1) - (parseCount(P(a).e) ?? -1),
     complete: (a, b) => filledCount(b) - filledCount(a) || cmpDefault(a, b),
     diff: (a, b) => {
       if (score == null) return cmpDefault(a, b);
-      const ma = matchOf(parseLineVal(a[progKey] || {}), score);
-      const mb = matchOf(parseLineVal(b[progKey] || {}), score);
+      const ma = matchOf(parseLineVal(P(a)), score);
+      const mb = matchOf(parseLineVal(P(b)), score);
       const da = ma ? ma.diff : -9999, db = mb ? mb.diff : -9999;
       return db - da || cmpDefault(a, b);
     },
@@ -452,29 +465,34 @@ function renderResults() {
 
 // 导出当前筛选 + 当前排序的结果为 CSV，可直接用 Excel 打开
 function exportCurrentCsv() {
-  const progKey = $('#fProgram').value || 'z';
+  const progSel = $('#fProgram').value;   // '' = 两者都看：每侧各出一行，别静默只导专硕
   const list = filteredSchools();
   if (!list.length) { toast('当前没有可导出的院校'); return; }
-  const pn = progName(progKey);
   const rows = [[
-    '省份', '城市', '院校', '层次', '数据年份',
-    pn + '复试线', '复试线年份', '录取人数', '报录比', '学费', '学制',
+    '省份', '城市', '院校', '层次', '数据年份', '学位类型',
+    '复试线', '复试线年份', '录取人数', '报录比', '学费', '学制',
     '初试数学', '专业课', '参考书目', '就业口碑', '备注', '核实来源'
   ]];
+  let n = 0;
   for (const s of list) {
-    const p = s[progKey] || {};
-    const y = p.l && YEARS.find(y => p.l[y] > 0);
-    const r = ratioText(p);
-    rows.push([
-      s.prov, s.city || '', s.name, (s.tags || []).join('/'), s.y || '',
-      y ? p.l[y] : (p.la ? '≈' + p.la : ''), y || '',
-      p.e || '', r === '—' ? '' : r,
-      p.f || '', p.d || '', p.m || '', p.j || '', p.bk || '', p.emp || '', p.nt || '',
-      (s.sources || []).join(' ')
-    ]);
+    const keys = progSel ? [progSel] : ['z', 'x'].filter(k => s[k]);
+    for (const k of keys) {
+      const p = s[k] || {};
+      const y = p.l && YEARS.find(y => p.l[y] > 0);
+      const r = ratioText(p);
+      rows.push([
+        s.prov, s.city || '', s.name, (s.tags || []).join('/'), s.y || '', progName(k),
+        y ? p.l[y] : (p.la ? '≈' + p.la : ''), y || '',
+        p.e || '', r === '—' ? '' : r,
+        p.f || '', p.d || '', p.m || '', p.j || '', p.bk || '', p.emp || '', p.nt || '',
+        (s.sources || []).join(' ')
+      ]);
+      n++;
+    }
   }
+  const pn = progSel ? progName(progSel) : '专硕+学硕';
   downloadFile(`${majorCfg().label}考研择校-${pn}-${list.length}所.csv`, toCsv(rows), 'text/csv;charset=utf-8');
-  toast(`已导出 ${list.length} 所院校`);
+  toast(`已导出 ${list.length} 所院校（${n} 条学位记录）`);
 }
 
 function toggleFav(ev, id) {
@@ -507,7 +525,23 @@ function toggleFav(ev, id) {
         }
         if (p.math) $('#fMath').value = p.math;
       }
-      var f = new URLSearchParams(location.search).get('focus');
+      var qs = new URLSearchParams(location.search);
+      var f = qs.get('focus');
+      var mj = qs.get('major');
+      /* 全局搜索直达非默认大类：先切专业并加载该大类数据，再按 id 定位院校 */
+      if (mj && MAJORS[mj] && mj !== CUR_MAJOR) {
+        CUR_MAJOR = mj;
+        var fmj = $('#fMajor'); if (fmj) fmj.value = mj;
+        getApi().loadData().then(function (d) {
+          DATA = d;
+          rebuildMajorUI(); updateStat();
+          var s = f ? DATA.schools.find(function (x) { return x.id === f; }) : null;
+          if (s) $('#fSearch').value = s.name;
+          renderResults();
+          try { if (window.parent !== window) window.parent.postMessage({ type: 'hub-module-ready', module: 'kaoyan' }, location.origin); } catch (e) {}
+        }).catch(function () { renderResults(); });
+        return;
+      }
       if (f) {
         var s = DATA.schools.find(function (x) { return x.id === f; });
         if (s) $('#fSearch').value = s.name;

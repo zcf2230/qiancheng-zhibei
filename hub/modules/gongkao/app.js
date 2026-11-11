@@ -188,6 +188,23 @@ const fmtRatio = p => {
   return null;
 };
 function ratioClass(r) { if (r == null) return ''; return r >= 100 ? 'ratio-hot' : r >= 40 ? 'ratio-mid' : 'ratio-ok'; }
+/* 部分省份官方只公布「比例区间」而非精确报名人数（四川2027 最终统计＝缴费人数/名额；
+ * 广东2027 报名期快照＝报名人数/名额的两端职位）。按区间原样展示并标注口径与截止时间，
+ * 不折算成数字，也不参与精确竞争比的数值排序。 */
+function bandTitle(p) {
+  return `官方公布的比例区间（非精确报名人数）｜口径：${p.ratioBandBasis || '见来源'}｜统计截止 ${p.ratioBandAsOf || ''}`;
+}
+function ratioCell(p, empty = '-') {
+  if (p.ratio) return p.ratio + ' : 1';
+  if (p.ratioBand) return `<span class="ratio-band" title="${esc(bandTitle(p))}">${esc(p.ratioBand)}<i>区间</i></span>`;
+  return empty;
+}
+/* 纯文本版：对比表等会再 esc() 的地方用这个，避免把标签转义成可见字符 */
+function ratioText(p, empty = '-') {
+  if (p.ratio) return p.ratio + ' : 1';
+  if (p.ratioBand) return p.ratioBand + '（官方区间）';
+  return empty;
+}
 function posUid(p) { return p.exam + '|' + (p.code || '') + '|' + (p.dept || '') + '|' + (p.position || '') + '|' + (p.location || ''); }
 
 // 判定两条记录是否为「同一个职位」。
@@ -213,27 +230,41 @@ function parseRange(s) {
 }
 
 /* ---------------- 数据加载 ---------------- */
-async function loadBuiltins(exams) {
-  loadIssues = [];
-  const list = exams || checkedExams();
+/* 分两波下载：wave 1 只取每个考试的主文件（约 300KB），先到先渲染，首屏不用等最慢的那个；
+ * wave 2 补载同考试的往届/补充文件，载完后重建一次。慢网下首屏从 3.7s 降到 1s 出头。 */
+function wantedFiles(list) {
   const wanted = [];
-  list.forEach(e => (EXAM_FILES[e] || []).forEach(f => { if (!wanted.includes(f)) wanted.push(f); }));
-  const results = await Promise.all(wanted.map(async f => {
-    if (fileCache.has(f)) return fileCache.get(f);
+  (list || checkedExams()).forEach(e => (EXAM_FILES[e] || []).forEach(f => { if (!wanted.includes(f)) wanted.push(f); }));
+  return wanted;
+}
+function primaryFiles(list) {
+  const s = new Set();
+  (list || checkedExams()).forEach(e => { const fs = EXAM_FILES[e] || []; if (fs[0]) s.add(fs[0]); });
+  return s;
+}
+async function loadBuiltins(exams, wave) {
+  if (wave === 1 || !wave) loadIssues = [];
+  const list = exams || checkedExams();
+  const wanted = wantedFiles(list);
+  const primaries = primaryFiles(list);
+  const batch = wave === 1 ? wanted.filter(f => primaries.has(f))
+    : wave === 2 ? wanted.filter(f => !primaries.has(f))
+      : wanted;
+  await Promise.all(batch.map(async f => {
+    if (fileCache.has(f)) return;
     try {
       const d = await readJson(DATA_DIR + f);
       d._file = f;
       fileCache.set(f, d);
-      return d;
     } catch (e) {
       // 绝不静默吞掉：JSON 写坏会让整份数据凭空消失，必须让用户看见
       loadIssues.push(e && e.missing
         ? { file: f, type: 'missing', msg: '文件不存在（数据待补齐）' }
         : { file: f, type: 'error', msg: '加载失败：' + e.message });
-      return null;
     }
   }));
-  const raws = results.filter(Boolean);
+  // 数据集始终按「本次勾选的全部文件」重建：wave 2 也要带上 wave 1 已缓存的主文件
+  const raws = wanted.filter(f => fileCache.has(f)).map(f => fileCache.get(f));
   dataUpdatedAt = new Date(DATA_UPDATED_AT);
 
   // 同名考试同年份合并：以先出现的文件为主（overallStats/timeline 取主文件），positions 追加去重；不同年度（如国考2027）作为独立数据集展示
@@ -260,10 +291,12 @@ async function loadBuiltins(exams) {
     datasets.push(custom);
   }
 
-  try {
-    const k = await readJson(KOUBEI_FILE);
-    koubeiItems = k.items || [];
-  } catch (e) { koubeiItems = []; }
+  if (!koubeiItems.length) {   // 补载第二波时会再跑一遍，别重复请求
+    try {
+      const k = await readJson(KOUBEI_FILE);
+      koubeiItems = k.items || [];
+    } catch (e) { koubeiItems = []; }
+  }
 
   allPositions = [];
   const byUid = new Map();   // uid -> 已收录的岗位
@@ -433,7 +466,8 @@ function renderResults() {
   const body = document.getElementById('resultBody');
   const agg = list.filter(isAggregate).length;
   document.getElementById('matchCount').textContent =
-    `匹配到 ${list.length} 个岗位（真实职位 ${list.length - agg} · 机关汇总 ${agg}）`;
+    `匹配到 ${list.length} 个岗位（真实职位 ${list.length - agg} · 机关汇总 ${agg}）`
+    + (pendingWave2() ? ' · 往届数据补载中…' : '');
   document.getElementById('emptyTip').classList.toggle('hidden', list.length > 0);
 
   // 截断提示：旧版本静默只显示前 400 条，用户无从察觉
@@ -485,7 +519,7 @@ function renderResults() {
       <td title="${esc(p.location || '')}">${esc(p.location || '')}</td>
       <td>${p.quota ?? '-'}</td>
       <td title="${p.applicants == null ? '官方未公布该岗位报名人数' : '报名人数'}">${p.applicants ?? '—'}</td>
-      <td class="${ratioClass(p.ratio)}">${p.ratio ? p.ratio + ' : 1' : '-'}</td>
+      <td class="${ratioClass(p.ratio)}">${ratioCell(p)}</td>
       <td>${scoreCell(p)}</td>
       <td>${finTag(p)}</td>
       <td class="major-cell" title="${esc(p.major || '')}">${esc(p.major || '')}</td>
@@ -530,27 +564,42 @@ function localDateStr(d = new Date()) {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
 
-function exportExcel() {
+/* xlsx 库 881KB（传输 309KB），只有「导出 Excel / 导入表格」才用得到：
+ * 改成点击时按需下载，首屏不再和数据文件抢带宽。 */
+let xlsxPromise = null;
+function ensureXLSX() {
+  if (typeof XLSX !== 'undefined' && XLSX.utils) return Promise.resolve(XLSX);
+  if (xlsxPromise) return xlsxPromise;
+  xlsxPromise = new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = 'lib/xlsx.full.min.js';
+    s.onload = () => (typeof XLSX !== 'undefined' && XLSX.utils)
+      ? res(XLSX)
+      : rej(new Error('表格组件加载不完整'));
+    s.onerror = () => { xlsxPromise = null; rej(new Error('表格组件下载失败，请检查网络后重试')); };
+    document.head.appendChild(s);
+  });
+  return xlsxPromise;
+}
+
+async function exportExcel() {
   if (!lastFiltered.length) { alert('当前没有可导出的结果，请先查询'); return; }
+  const xl = await ensureXLSX().catch(e => { alert('导出组件准备失败：' + e.message); return null; });
+  if (!xl) return;
   const rows = lastFiltered.map(p => ({
     '考试': p.exam, '年度': p.year, '招录机关': p.dept, '职位': p.position,
     '条目类型': isAggregate(p) ? '机关汇总（非具体职位）' : '真实职位',
     '地区': p.location || '', '招录人数': p.quota ?? '', '报名人数': p.applicants ?? '',
-    '竞争比': p.ratio ? p.ratio + ':1' : '', '进面分': p.entryScore ?? '',
+    '竞争比': p.ratio ? p.ratio + ':1' : '',
+    '官方比例区间': p.ratioBand || '', '区间口径': p.ratioBandBasis || '', '区间统计截止': p.ratioBandAsOf || '',
+    '进面分': p.entryScore ?? '',
     '学历要求': p.education || '', '专业要求': p.major || '',
     '金融可报': p.financeOk === true ? '是' : p.financeOk === false ? '否' : '待核对',
     '政治面貌': p.political || '', '基层年限': p.baseYears || '',
-    '备注': p.notes || '', '来源': p.source || ''
+    '备注': p.notes || '', '来源': p.source || '', '区间来源': p.ratioBandSource || ''
   }));
-  // xlsx 库在两种环境挂载位置不同：
-  //   桌面（nodeIntegration）：走 CommonJS -> require('./lib/xlsx.full.min.js') 拿完整库，
-  //     全局 XLSX 是空壳（这就是之前「导出没反应」的根因——writeFile 把文件静默写进了进程目录）
-  //   网页浏览器：UMD 挂 window.XLSX（完整库）
-  const xl = (typeof XLSX !== 'undefined' && XLSX.utils) ? XLSX
-    : null;
-  if (!xl || !xl.utils) { alert('表格组件尚未加载完成，请重启应用后重试'); return; }
   const ws = xl.utils.json_to_sheet(rows);
-  ws['!cols'] = [{ wch: 10 }, { wch: 6 }, { wch: 32 }, { wch: 22 }, { wch: 20 }, { wch: 14 }, { wch: 8 }, { wch: 9 }, { wch: 9 }, { wch: 7 }, { wch: 14 }, { wch: 30 }, { wch: 8 }, { wch: 10 }, { wch: 10 }, { wch: 30 }, { wch: 30 }];
+  ws['!cols'] = [{ wch: 10 }, { wch: 6 }, { wch: 32 }, { wch: 22 }, { wch: 20 }, { wch: 14 }, { wch: 8 }, { wch: 9 }, { wch: 9 }, { wch: 16 }, { wch: 26 }, { wch: 18 }, { wch: 7 }, { wch: 14 }, { wch: 30 }, { wch: 8 }, { wch: 10 }, { wch: 10 }, { wch: 30 }, { wch: 30 }, { wch: 30 }];
   const wb = xl.utils.book_new();
   xl.utils.book_append_sheet(wb, ws, '岗位');
   // 显式 Blob 下载，两端行为一致：
@@ -592,7 +641,7 @@ function openDetail(uid) {
       <span class="k">职位代码</span><span class="v">${esc(p.code || '未提供')}</span>
       <span class="k">招录人数</span><span class="v">${p.quota ?? '暂无公开数据'}</span>
       <span class="k">报名人数</span><span class="v">${p.applicants ?? '暂无公开数据（官方仅在报名期内公布实时数据）'}</span>
-      <span class="k">竞争比</span><span class="v ${ratioClass(p.ratio)}">${p.ratio ? p.ratio + ' : 1' : '暂无数据'}</span>
+      <span class="k">竞争比</span><span class="v ${ratioClass(p.ratio)}">${ratioCell(p, '暂无数据')}</span>
       <span class="k">进面分数线</span><span class="v">${p.entryScore ?? (ds?.entryScoreSummary ? '可参考：' + esc(ds.entryScoreSummary) : '暂无公开数据')}</span>
       <span class="k">学历要求</span><span class="v">${esc(p.education || '未公布')}</span>
       <span class="k">专业要求</span><span class="v">${esc(p.major || '未公布')}</span>
@@ -721,7 +770,7 @@ function renderFavs() {
   wrap.innerHTML = list.map(p => `<div class="fav-item">
     <span class="fav-star on" data-act="fav" data-uid="${esc(p.uid)}">★</span>
     <div class="info">${p.source ? `<a class="srclink" href="${esc(p.source)}" target="_blank"><b>${esc(p.dept)}</b></a>` : `<b>${esc(p.dept)}</b>`} · ${esc(p.position)} <span class="tag">${esc(p.exam)}</span><span class="tag gray">${esc(p.location || '')}</span></div>
-    <span>招录 ${p.quota ?? '-'}${p.ratio ? ` ｜ 竞争比 ${p.ratio}:1` : ''}</span>
+    <span>招录 ${p.quota ?? '-'}${p.ratio ? ` ｜ 竞争比 ${p.ratio}:1` : p.ratioBand ? ` ｜ 官方区间 ${esc(p.ratioBand)}` : ''}</span>
     <button class="btn small" data-act="open" data-uid="${esc(p.uid)}">详情</button>
   </div>`).join('');
 }
@@ -735,7 +784,7 @@ function renderCompare() {
     ['地区', p => p.location || '—'],
     ['招录人数', p => p.quota ?? '—'],
     ['报名人数', p => p.applicants ?? '未公布'],
-    ['竞争比', p => p.ratio ? p.ratio + ' : 1' : '—'],
+    ['竞争比', p => ratioText(p, '—')],
     ['进面分', p => p.entryScore ?? '—'],
     ['学历', p => p.education || '—'],
     ['专业要求', p => p.major || '—'],
@@ -846,6 +895,7 @@ function renderDataSummary() {
       <b>机关汇总</b>条目是「该机关共招 N 岗 M 人」的机关级推断，<b>不是可以直接投递的具体职位</b>，仅用于判断某地某系统是否招金融专业；
       需要具体职位请以官方职位表为准。全库字段完整度：招录人数 ${pct(allPositions.filter(p => p.quota != null).length)} ·
       报名人数 ${pct(allPositions.filter(p => p.applicants != null).length)} ·
+      官方比例区间 ${pct(allPositions.filter(p => p.ratioBand).length)} ·
       进面分 ${pct(allPositions.filter(p => p.entryScore != null).length)} ·
       职位代码 ${pct(allPositions.filter(p => p.code != null).length)}。
     </p>`;
@@ -868,7 +918,7 @@ function renderDataSummary() {
       </tbody></table></div>`;
   }
   document.getElementById('dataSummary').innerHTML = `${overview}${issuesHtml}
-    <table class="compare-table" style="margin-top:12px"><thead><tr><th>数据集</th><th>年度</th><th>条目数</th><th>真实职位</th><th>机关汇总</th><th>金融可报</th><th>招录数完整</th><th>报名数完整</th><th>进面分完整</th><th>类型</th></tr></thead><tbody>
+    <table class="compare-table" style="margin-top:12px"><thead><tr><th>数据集</th><th>年度</th><th>条目数</th><th>真实职位</th><th>机关汇总</th><th>金融可报</th><th>招录数完整</th><th>报名数完整</th><th>官方区间</th><th>进面分完整</th><th>类型</th></tr></thead><tbody>
     ${datasets.map(d => {
     const pos = d.positions || [];
     const a = pos.filter(isAggregate).length;
@@ -877,10 +927,14 @@ function renderDataSummary() {
       <td>${pos.filter(p => p.financeOk).length}</td>
       <td>${cov(pos, p => p.quota != null)}</td>
       <td>${cov(pos, p => p.applicants != null)}</td>
+      <td>${cov(pos, p => p.ratioBand)}</td>
       <td>${cov(pos, p => p.entryScore != null)}</td>
       <td>${d._custom ? '导入' : '内置'}</td></tr>`;
   }).join('')}
-  </tbody></table>${cityHtml}`;
+  </tbody></table>
+  ${datasets.filter(d => d.overallStats && d.overallStats.ratioBasis).map(d => `
+    <p class="muted" style="margin-top:8px"><b>${esc(d.exam)} ${esc(d.year)} 竞争度口径</b>：${esc(d.overallStats.ratioBasis)}</p>`).join('')}
+  ${cityHtml}`;
 }
 
 /* ---------------- 节点提醒 ---------------- */
@@ -949,11 +1003,13 @@ function autoMapColumns(headers) {
 
 function handleImportFile(file) {
   const reader = new FileReader();
-  reader.onload = e => {
+  reader.onload = async e => {
+    let xl;
+    try { xl = await ensureXLSX(); } catch (err) { alert('表格组件准备失败：' + err.message); return; }
     try {
-      const wb = XLSX.read(e.target.result, { type: 'array' });
+      const wb = xl.read(e.target.result, { type: 'array' });
       const ws = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+      const rows = xl.utils.sheet_to_json(ws, { header: 1, defval: '' });
       if (!rows.length) throw new Error('表格为空');
       let headerIdx = 0, best = -1;
       rows.slice(0, 5).forEach((r, i) => {
@@ -1543,6 +1599,23 @@ function updateShell() {
   }
 }
 
+/* wave 2（往届/补充文件）是否还没载完：载完后要重建一次列表 */
+function pendingWave2() {
+  const list = checkedExams();
+  const primaries = primaryFiles(list);
+  return wantedFiles(list).some(f => !primaries.has(f) && !fileCache.has(f));
+}
+/* 补载完成后重建：保留用户当前的滚动位置，别在他读表的时候把页面弹回顶部 */
+async function finishWave2() {
+  const sc = document.scrollingElement;
+  const y = sc ? sc.scrollTop : 0;
+  await loadBuiltins(null, 2);
+  fillRegionSelect();
+  renderResults();
+  renderAnalysis(); renderPrep(); renderDataSummary(); updateShell();
+  if (sc) sc.scrollTop = y;
+}
+
 async function bootstrap(first) {
   // P4：先恢复筛选（决定要懒加载哪些考试），再加载数据
   if (first) {
@@ -1550,7 +1623,7 @@ async function bootstrap(first) {
       applyFilterDefaults();
     }
   }
-  await loadBuiltins();
+  await loadBuiltins(null, 1);
   fillRegionSelect();
   syncSortHeaders();
   renderResults();
@@ -1566,6 +1639,8 @@ async function bootstrap(first) {
     checkReminders();
   }
   removeBootSplash();
+  // 首屏已出，剩下的往届数据在后台补；期间用户改了勾选就由 change 事件走全量重载
+  if (pendingWave2()) finishWave2();
 }
 
 /* 启动骨架屏：数据加载完成（或失败，横幅会提示）后淡出移除 */

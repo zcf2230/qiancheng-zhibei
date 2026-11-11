@@ -418,6 +418,12 @@ a.srclink:hover { color: var(--forest); text-decoration: underline; }
 .ratio-hot { color: var(--danger); font-weight: 700; }
 .ratio-ok { color: var(--ok); font-weight: 700; }
 .ratio-mid { color: var(--warn); font-weight: 700; }
+/* 官方只公布比例区间（四川2027）：与精确竞争比在视觉上分开，避免被当成同一口径的数字 */
+.ratio-band { color: var(--muted, #6b7280); font-weight: 600; white-space: nowrap; }
+.ratio-band i {
+  font-style: normal; font-size: 10px; font-weight: 600; margin-left: 4px;
+  padding: 1px 4px; border-radius: 3px; border: 1px solid currentColor; opacity: .75;
+}
 
 /* ===================== 提醒横幅 ===================== */
 .reminder-banner {
