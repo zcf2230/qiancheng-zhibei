@@ -649,6 +649,8 @@ html.custom-cursor :focus-visible { outline: 2px solid var(--teal-2); outline-of
 
 /* iframe 骨架 + 淡入 */
 .frame-wrap { position: relative; }
+/* 内容层 / iframe 层：切模块时只隐藏 iframe 层，不销毁 iframe（保住已加载的数据与滚动位置） */
+.route-layer[hidden], .frame-layer[hidden], .frame-wrap[hidden] { display: none !important; }
 .hub-frame { opacity: 0; transition: opacity .35s var(--ease); }
 .hub-frame.ready { opacity: 1; }
 .frame-skel { position: absolute; inset: 50px 0 0 0; border-radius: var(--radius-lg); background: var(--paper-2); border: 1px solid var(--line); overflow: hidden; padding: 28px; }

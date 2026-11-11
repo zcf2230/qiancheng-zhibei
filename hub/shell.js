@@ -85,6 +85,23 @@
   }
 
   function rootEl() { return document.getElementById('module-root'); }
+  /* 内容层与 iframe 层分开。切走模块时只把 iframe 层隐藏、绝不从 DOM 移除——
+   * 移除 iframe 会销毁浏览上下文，再进来就得重新下载/解析/渲染一遍（实习那 1.4MB 数据脚本尤其贵）。
+   * 隐藏保留后，切回来是瞬时的，模块内的筛选、滚动位置、已加载数据都还在。 */
+  var _layers = null;
+  function layers() {
+    if (_layers) return _layers;
+    var root = rootEl();
+    var route = document.createElement('div');
+    route.className = 'route-layer';
+    var fr = document.createElement('div');
+    fr.className = 'frame-layer';
+    fr.hidden = true;
+    root.appendChild(route);
+    root.appendChild(fr);
+    _layers = { route: route, frame: fr };
+    return _layers;
+  }
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -995,49 +1012,84 @@
       '<a class="back" href="#/home">返回首页</a></div>';
   }
 
-  /* 首页空闲时预热三个模块的入口资源（HTML/JS/CSS，不含数据）：点进模块时只剩数据请求。
+  /* 预热模块入口资源（HTML/JS/CSS，不含数据）：点进模块时只剩数据请求。
    * 资源清单从模块 HTML 里现读——JS/CSS 带 ?v= 版本号，写死在外壳里一定会和真实请求对不上。
-   * 省流量场景（saveData / 2g）直接跳过。 */
-  var warmed = false;
+   * 两个时机：①页面 load 后 1.2s 空闲把三个模块都过一遍；②鼠标悬停/按下某个模块入口时立刻只热它，
+   * 这样即使首页还没空闲就点进去，也有几百毫秒的提前量。省流量场景（saveData / 2g）整体跳过。 */
+  var warmedNames = Object.create(null);
   function isDataUrl(u) {
     return /\.(json|gz)(\?|$)/i.test(u) || /\/data\//i.test(u) || /(^|\/)data[^/]*\.js(\?|$)/i.test(u);
   }
   function frameUrl(name, query) {
     return FRAME_SRC[name] + '?' + (query ? query + '&' : '') + 'hubtheme=' + themePref();
   }
-  function warmModules() {
-    if (warmed) return;
+  function connAllowsWarm() {
     var conn = navigator.connection || navigator.mozConnection || {};
-    if (conn.saveData || (conn.effectiveType && !/^3g|^4g/.test(conn.effectiveType))) return;
-    warmed = true;
-    Object.keys(FRAME_SRC).forEach(function (name) {
-      /* 用和 mountFrame 完全一致的地址预热，否则带 hubtheme 参数的请求命不中缓存 */
-      var url = frameUrl(name);
-      /* HTML 必须取新的：拿到旧副本就会去预热已经不存在的资源（比如已改成按需加载的 xlsx） */
-      fetch(url, { cache: 'reload' }).then(function (r) { return r.text(); }).then(function (html) {
-        var doc = new DOMParser().parseFromString(html, 'text/html');
-        var base = new URL(url, location.href).href;
-        doc.querySelectorAll('script[src], link[href]').forEach(function (n) {
-          var u = n.getAttribute('src') || n.getAttribute('href');
-          if (!u || /^(https?:)?\/\//.test(u) || /^data:/.test(u)) return;
-          var abs = new URL(u, base).href;
-          if (isDataUrl(abs)) return;
-          fetch(abs, { cache: 'default' }).catch(function () {});
-        });
-      }).catch(function () {});
-    });
+    return !conn.saveData && !(conn.effectiveType && !/^3g|^4g/.test(conn.effectiveType));
+  }
+  function warmModule(name) {
+    if (!FRAME_SRC[name] || warmedNames[name] || !connAllowsWarm()) return;
+    warmedNames[name] = true;
+    /* 用和 mountFrame 完全一致的地址预热，否则带 hubtheme 参数的请求命不中缓存 */
+    var url = frameUrl(name);
+    /* HTML 必须取新的：拿到旧副本就会去预热已经不存在的资源（比如已改成按需加载的 xlsx） */
+    fetch(url, { cache: 'reload' }).then(function (r) { return r.text(); }).then(function (html) {
+      var doc = new DOMParser().parseFromString(html, 'text/html');
+      var base = new URL(url, location.href).href;
+      doc.querySelectorAll('script[src], link[href]').forEach(function (n) {
+        var u = n.getAttribute('src') || n.getAttribute('href');
+        if (!u || /^(https?:)?\/\//.test(u) || /^data:/.test(u)) return;
+        var abs = new URL(u, base).href;
+        if (isDataUrl(abs)) return;
+        /* vendor 目录（字体 CSS / GSAP）外壳已经加载过，再热一遍纯属重复下载 */
+        if (/\/vendor\//.test(abs)) return;
+        /* force-cache：缓存里有就直接用，绝不为了「预热」再下一次 */
+        fetch(abs, { cache: 'force-cache' }).catch(function () {});
+      });
+    }).catch(function () { warmedNames[name] = false; });
+  }
+  function warmModules() { Object.keys(FRAME_SRC).forEach(warmModule); }
+  /* 悬停/按下模块入口就预热那一个：比等页面空闲更贴合真实意图 */
+  function bindWarmIntent() {
+    var onIntent = function (e) {
+      var a = e.target && e.target.closest ? e.target.closest('a[href^="#/"]') : null;
+      if (!a) return;
+      var name = (a.getAttribute('href') || '').replace(/^#\//, '').split('?')[0];
+      if (FRAME_SRC[name]) warmModule(name);
+    };
+    document.addEventListener('pointerover', onIntent, { passive: true });
+    document.addEventListener('pointerdown', onIntent, { passive: true });
+    document.addEventListener('touchstart', onIntent, { passive: true });
+    document.addEventListener('focusin', onIntent);
   }
   function scheduleWarm() {
-    /* 别和首页自身的字体/动效抢带宽：等页面彻底空下来再预热 */
+    bindWarmIntent();
     var go = function () {
-      if (typeof requestIdleCallback === 'function') requestIdleCallback(warmModules, { timeout: 6000 });
+      if (typeof requestIdleCallback === 'function') requestIdleCallback(warmModules, { timeout: 2500 });
       else warmModules();
     };
-    if (document.readyState === 'complete') setTimeout(go, 2000);
-    else window.addEventListener('load', function () { setTimeout(go, 2000); });
+    if (document.readyState === 'complete') setTimeout(go, 1200);
+    else window.addEventListener('load', function () { setTimeout(go, 1200); });
   }
 
+  /* 按 name|query 缓存已挂载的帧：同一模块同一入口再次进来直接复用，不重新加载 */
+  var frameCache = Object.create(null);
   function mountFrame(name, el, query) {
+    var key = name + '|' + query;
+    /* 同一时刻只显示一个模块 */
+    Object.keys(frameCache).forEach(function (k) { if (k !== key) frameCache[k].wrap.hidden = true; });
+    var hit = frameCache[key];
+    if (hit) {
+      hit.wrap.hidden = false;
+      frame = hit.frame;
+      /* 期间外壳可能换过主题/光标/沉浸态，复用时要重新同步一次 */
+      try {
+        frame.contentWindow.postMessage({ type: 'hub-theme', theme: themePref() }, location.origin);
+        frame.contentWindow.postMessage({ type: 'hub-cursor-init', enabled: cursorEnabled }, location.origin);
+        frame.contentWindow.postMessage({ type: 'hub-immersive', on: false }, location.origin);
+      } catch (e) {}
+      return;
+    }
     var wrap = document.createElement('div');
     wrap.className = 'frame-wrap';
     wrap.innerHTML = moduleBar(name);
@@ -1056,6 +1108,16 @@
     wrap.appendChild(frame);
     wrap.appendChild(skel);
     el.appendChild(wrap);
+    frameCache[key] = { wrap: wrap, frame: frame };
+    /* 缓存上限：同一模块带不同 ?focus= 会各存一份，超过 4 个就把最早且当前不可见的移除 */
+    var keys = Object.keys(frameCache);
+    if (keys.length > 4) {
+      var oldK = keys.find(function (k) { return frameCache[k].wrap.hidden; }) || keys[0];
+      if (oldK !== key) {
+        if (frameCache[oldK].wrap.parentNode) frameCache[oldK].wrap.remove();
+        delete frameCache[oldK];
+      }
+    }
     frame.addEventListener('load', function () {
       frame.classList.add('ready');
       /* 考研的数据是异步 fetch 的，load 时列表还没渲染：正常靠 hub-module-ready 撤骨架，这里只兜底 */
@@ -1122,8 +1184,10 @@
         e.source.postMessage({ type: 'hub-cursor-init', enabled: cursorEnabled }, location.origin);
       } catch (err) {}
     } else if (e.data.type === 'hub-module-ready') {
+      /* 只撤当前活跃帧的骨架：其余模块的帧可能还藏着（保活缓存），不能误删 */
+      var aw = frame && frame.parentNode;
       if (frame) frame.classList.add('ready');
-      var sk = document.querySelector('.frame-skel');
+      var sk = aw ? aw.querySelector('.frame-skel') : null;
       if (sk) sk.remove();
     }
   });
@@ -1172,21 +1236,31 @@
     var name = raw.split('?')[0] || 'home';
     var query = raw.split('?')[1] || '';
     if (ROUTES.indexOf(name) === -1) name = 'home';
-    if (frame) { frame.remove(); frame = null; }
-    var el = rootEl();
-    el.innerHTML = '';
+    var L = layers();
     document.body.setAttribute('data-route', name);
     syncMeteors(name);
     document.querySelectorAll('.hub-nav a, .hub-tabbar a, .hub-drawer-nav a').forEach(function (a) {
       a.classList.toggle('active', a.getAttribute('data-route') === name);
     });
     window.scrollTo(0, 0);
+    if (FRAME_SRC[name]) {
+      /* 模块路由：帧层接管，内容层清空并隐藏 */
+      L.route.hidden = true;
+      L.route.innerHTML = '';
+      L.frame.hidden = false;
+      return mountFrame(name, L.frame, query);
+    }
+    /* 内容路由：只隐藏帧层（iframe 保活，不销毁），再渲染内容层 */
+    L.frame.hidden = true;
+    frame = null;
+    L.route.hidden = false;
+    var el = L.route;
+    el.innerHTML = '';
     if (name === 'home') return renderHome(el);
     if (name === 'timeline') return renderTimeline(el);
     if (name === 'path') return renderPath(el);
     if (name === 'search') return renderSearch(el, query);
     if (name === 'about') return renderAbout(el);
-    mountFrame(name, el, query);
   }
 
   var navTl = null;

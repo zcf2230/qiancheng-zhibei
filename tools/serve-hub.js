@@ -45,9 +45,27 @@ http.createServer((req, res) => {
   if (u.endsWith('/')) u += 'index.html';
   const f = path.join(root, u);
   if (!f.startsWith(root)) { res.writeHead(403); return res.end(); }
-  fs.readFile(f, (e, d) => {
-    if (e) { res.writeHead(404); return res.end('404'); }
-    res.writeHead(200, { 'Content-Type': mime[path.extname(f)] || 'application/octet-stream' });
-    res.end(d);
+  fs.stat(f, (se, st) => {
+    if (se || !st.isFile()) { res.writeHead(404); return res.end('404'); }
+    const isHtml = path.extname(f) === '.html';
+    /* 模拟线上 CDN：静态资源可缓存，HTML 每次校验。
+     * 不这样做的话每次 fetch/iframe 都会整份重下，本地测出来的「卡顿」会明显大于线上。 */
+    const headers = {
+      'Content-Type': mime[path.extname(f)] || 'application/octet-stream',
+      'Cache-Control': isHtml ? 'no-cache' : 'public, max-age=600',
+      'Last-Modified': st.mtime.toUTCString()
+    };
+    const ims = req.headers['if-modified-since'];
+    if (ims && !isHtml) {
+      const t = Date.parse(ims);
+      if (!isNaN(t) && Math.floor(st.mtimeMs / 1000) <= Math.floor(t / 1000)) {
+        res.writeHead(304, headers); return res.end();
+      }
+    }
+    fs.readFile(f, (e, d) => {
+      if (e) { res.writeHead(404); return res.end('404'); }
+      res.writeHead(200, headers);
+      res.end(d);
+    });
   });
 }).listen(8123, '127.0.0.1', () => console.log('hub server on 8123'));

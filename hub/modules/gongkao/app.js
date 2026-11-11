@@ -89,7 +89,7 @@ let aggregateCount = 0; // 机关级汇总条目数（非真实职位）
 
 /* 查询条件的「出厂默认值」——「重置条件」必须还原到这一组，而不是另一组别的值 */
 const FILTER_DEFAULTS = {
-  exams: ['国考', '浙江选调', '浙江省考', '山东省考', '上海市考'],
+  exams: ['国考'],
   region: '',
   major: '金融',
   edu: 'bachelor',

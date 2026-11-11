@@ -415,6 +415,9 @@ a.srclink:hover { color: var(--forest); text-decoration: underline; }
   vertical-align: 1px; cursor: help;
 }
 
+/* 首屏只载国考，提示可以按需补载其他考试 */
+.filter-hint { margin: 6px 0 0; font-size: 12px; line-height: 1.55; color: var(--muted); }
+
 .ratio-hot { color: var(--danger); font-weight: 700; }
 .ratio-ok { color: var(--ok); font-weight: 700; }
 .ratio-mid { color: var(--warn); font-weight: 700; }
