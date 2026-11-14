@@ -46,7 +46,7 @@ let VIEW = 'query';
 let SCORE = null;              // 分数匹配：用户输入的预估总分
 
 /* ---------- 多专业大类（方案A）：每个大类独立数据目录，金融保持默认 ---------- */
-const DATA_VERSION = 7;
+const DATA_VERSION = 8;
 const MAJORS = {
   fin:  { label: '金融',           z: '金融专硕',           x: '金融学硕',         zCode: '0251',   xCode: '0202', cat: '经济学', dir: '',     math: [['396', '考396经综'], ['数学三', '考数学三']] },
   cs:   { label: '计算机/电子信息', z: '计算机专硕',         x: '计算机学硕',       zCode: '0854',   xCode: '0812', cat: '工学',   dir: 'cs/',  math: [['数学一', '考数一'], ['数学二', '考数二'], ['408', '考408']] },
@@ -503,6 +503,69 @@ function toggleFav(ev, id) {
   if (VIEW === 'fav') renderFav();
 }
 
+/* ---------- 筛选链接：把当前筛选写进 URL，可分享给同学 ---------- */
+const KY_URL_DEFAULTS = { prov: '', tag: '', program: 'z', math: '', sort: 'default', complete: '', fav: false, fit: false, score: '', q: '' };
+function kyFiltersToQuery() {
+  const cur = {
+    prov: $('#fProv').value, tag: $('#fTag').value, program: $('#fProgram').value,
+    math: $('#fMath').value, sort: $('#fSort').value,
+    complete: $('#fComplete') ? $('#fComplete').value : '',
+    fav: $('#fFav').checked, fit: $('#fFit') ? $('#fFit').checked : false,
+    score: $('#fScore') ? $('#fScore').value : '', q: $('#fSearch').value.trim()
+  };
+  const parts = [];
+  if (CUR_MAJOR && CUR_MAJOR !== 'fin') parts.push('major=' + encodeURIComponent(CUR_MAJOR));
+  for (const k of Object.keys(KY_URL_DEFAULTS)) {
+    const v = cur[k], d = KY_URL_DEFAULTS[k];
+    if (typeof d === 'boolean') { if (v) parts.push(k + '=1'); }
+    else if (v !== d && v !== '' && v != null) parts.push(k + '=' + encodeURIComponent(v));
+  }
+  return parts.join('&');
+}
+function kyShareUrl() {
+  const q = kyFiltersToQuery();
+  let base;
+  try { base = (window.parent !== window ? window.parent.location.href : location.href).split('#')[0]; }
+  catch (e) { base = location.href.split('#')[0]; }
+  return base + '#/kaoyan' + (q ? '?' + q : '');
+}
+function kyCopyFilterLink() {
+  const url = kyShareUrl();
+  const done = () => toast('已复制筛选链接，可直接发给同学');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(done).catch(() => kyCopyFallback(url, done));
+  } else kyCopyFallback(url, done);
+}
+function kyCopyFallback(url, done) {
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = url; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta); done();
+  } catch (e) { window.prompt('复制下方链接：', url); }
+}
+/* 把 URL 里的筛选值落到控件上（只设存在的选项，避免脏值）；在数据就绪后调用 */
+function applyKyUrlFilters(qs) {
+  const setSel = (id, val) => {
+    const el = $(id); if (!el || val == null) return;
+    if (Array.prototype.some.call(el.options, o => o.value === val)) { el.value = val; }
+  };
+  setSel('#fProv', qs.get('prov'));
+  setSel('#fTag', qs.get('tag'));
+  setSel('#fProgram', qs.get('program'));
+  setSel('#fMath', qs.get('math'));
+  setSel('#fSort', qs.get('sort'));
+  setSel('#fComplete', qs.get('complete'));
+  if (qs.get('fav')) $('#fFav').checked = true;
+  if (qs.get('fit') && $('#fFit')) $('#fFit').checked = true;
+  if (qs.get('score') && $('#fScore')) {
+    $('#fScore').value = qs.get('score');
+    const v = parseFloat(qs.get('score')); SCORE = isFinite(v) && v > 0 ? v : null;
+  }
+  if (qs.get('q')) $('#fSearch').value = qs.get('q');
+  document.querySelectorAll('.filters select').forEach(sel => sel.classList.toggle('nondefault', !!sel.value));
+}
+
 /* 前程指北：档案预填与搜索定位 */
 (function () {
   function ready(cb) {
@@ -535,6 +598,7 @@ function toggleFav(ev, id) {
         getApi().loadData().then(function (d) {
           DATA = d;
           rebuildMajorUI(); updateStat();
+          applyKyUrlFilters(qs);
           var s = f ? DATA.schools.find(function (x) { return x.id === f; }) : null;
           if (s) $('#fSearch').value = s.name;
           renderResults();
@@ -542,6 +606,7 @@ function toggleFav(ev, id) {
         }).catch(function () { renderResults(); });
         return;
       }
+      applyKyUrlFilters(qs);
       if (f) {
         var s = DATA.schools.find(function (x) { return x.id === f; });
         if (s) $('#fSearch').value = s.name;
@@ -975,7 +1040,15 @@ function buildReport() {
 /* ---------- 持久化 & 初始化 ---------- */
 async function persist() { await getApi().saveData(DATA); }
 function updateStat() {
-  $('#statLine').innerHTML = `共收录 <b style="color:var(--brand)">${DATA.schools.length}</b> 所院校<br>覆盖 ${new Set(DATA.schools.map(s => s.prov)).size} 个省市 · 数据仅供参考`;
+  const n = DATA.schools.length;
+  const provs = new Set(DATA.schools.map(s => s.prov)).size;
+  // 字段完整度透明化：当前大类专硕侧（无专硕则学硕侧）的学费/拟招/复试线覆盖率
+  const side = majorCfg().z ? 'z' : 'x';
+  const has = (s, k) => { const p = s[side]; return !!(p && p[k] && (!(p[k] instanceof Object) || Object.keys(p[k]).length)); };
+  const pct = k => n ? Math.round(DATA.schools.filter(s => has(s, k)).length / n * 100) : 0;
+  $('#statLine').innerHTML = `共收录 <b style="color:var(--brand)">${n}</b> 所院校<br>覆盖 ${provs} 个省市 · 数据仅供参考` +
+    `<div class="ky-cov">字段完整度 学费 <b>${pct('f')}%</b> · 拟招 <b>${pct('e')}%</b> · 复试线 <b>${pct('l')}%</b>` +
+    `<a class="ky-cov-link" href="https://yz.chsi.com.cn/zsml/" target="_blank" rel="noopener" title="缺口以各校当年官方简章为准">查官方简章 →</a></div>`;
 }
 
 async function init() {
@@ -1057,6 +1130,7 @@ async function init() {
     renderResults();
   };
   if ($('#btnExportCsv')) $('#btnExportCsv').onclick = exportCurrentCsv;
+  if ($('#btnCopyFilterLink')) $('#btnCopyFilterLink').onclick = kyCopyFilterLink;
   if ($('#mSearch')) $('#mSearch').addEventListener('input', renderManage);
 
   $('#btnCompare').onclick = openCompare;

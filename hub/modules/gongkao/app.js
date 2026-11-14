@@ -408,6 +408,64 @@ function applyFilterDefaults() {
   syncSortHeaders();
 }
 
+/* ---------------- 筛选即链接 ----------------
+   从 location.search 读筛选（分享链接优先于本地记忆/默认）；提供"复制筛选链接"生成顶层可分享 URL。 */
+const URL_FILTER_KEYS = ['exams', 'region', 'major', 'edu', 'political', 'base', 'keyword', 'sort', 'fav'];
+function readUrlFilters() {
+  const qs = new URLSearchParams(location.search);
+  if (!URL_FILTER_KEYS.some(k => qs.has(k))) return null;
+  return {
+    exams: qs.get('exams') ? qs.get('exams').split('|') : null,
+    region: qs.get('region'), major: qs.get('major'), edu: qs.get('edu'),
+    political: qs.get('political'), base: qs.get('base'), keyword: qs.get('keyword'),
+    sort: qs.get('sort'), fav: qs.get('fav')
+  };
+}
+function applyUrlFilterValues(uf) {
+  if (uf.region != null) document.getElementById('fRegion').value = uf.region;
+  if (uf.major != null) document.getElementById('fMajor').value = uf.major;
+  if (uf.edu != null) document.getElementById('fEdu').value = uf.edu;
+  if (uf.political != null) document.getElementById('fPolitical').value = uf.political;
+  if (uf.base != null) document.getElementById('fBase').value = uf.base;
+  if (uf.keyword != null) document.getElementById('fKeyword').value = uf.keyword;
+  if (uf.sort != null) document.getElementById('fSort').value = uf.sort;
+  if (uf.fav === '1') document.getElementById('fFavOnly').checked = true;
+  syncSortHeaders();
+}
+function filtersToQuery() {
+  const f = currentFilters(); const d = FILTER_DEFAULTS; const p = [];
+  if (f.exams.slice().sort().join('|') !== d.exams.slice().sort().join('|')) p.push('exams=' + encodeURIComponent(f.exams.join('|')));
+  if (f.region) p.push('region=' + encodeURIComponent(f.region));
+  if (f.major && f.major !== d.major) p.push('major=' + encodeURIComponent(f.major));
+  if (f.edu && f.edu !== d.edu) p.push('edu=' + encodeURIComponent(f.edu));
+  if (f.political) p.push('political=' + encodeURIComponent(f.political));
+  if (f.base) p.push('base=' + encodeURIComponent(f.base));
+  if (f.keyword) p.push('keyword=' + encodeURIComponent(f.keyword));
+  if (f.sort && f.sort !== d.sort) p.push('sort=' + encodeURIComponent(f.sort));
+  if (f.favOnly) p.push('fav=1');
+  return p.join('&');
+}
+function shareableFilterUrl() {
+  const q = filtersToQuery();
+  let base;
+  try { base = (window.parent !== window ? window.parent.location.href : location.href).split('#')[0]; }
+  catch (e) { base = location.href.split('#')[0]; }
+  return base + '#/gongkao' + (q ? '?' + q : '');
+}
+function copyFilterLink() {
+  const url = shareableFilterUrl();
+  const done = () => toast('已复制筛选链接，可直接发给同学');
+  const fallback = () => {
+    const ta = document.createElement('textarea');
+    ta.value = url; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); done(); } catch (e) { prompt('复制此链接：', url); }
+    ta.remove();
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done).catch(fallback);
+  else fallback();
+}
+
 function filterPositions(f) {
   let list = allPositions.filter(p => {
     if (f.exams.length && !f.exams.includes(p.exam)) return false;
@@ -1286,6 +1344,8 @@ function bindEvents() {
 
   document.getElementById('btnMatch').onclick = renderResults;
   document.getElementById('btnExport').onclick = exportExcel;
+  const cfl = document.getElementById('copyFilterLink');
+  if (cfl) cfl.onclick = copyFilterLink;
   document.querySelectorAll('.filter-card input, .filter-card select').forEach(el => {
     el.addEventListener('change', () => { syncSortHeaders(); renderResults(); saveLastFilters(); });
     if (el.type === 'text') el.addEventListener('keydown', ev => { if (ev.key === 'Enter') renderResults(); });
@@ -1617,14 +1677,18 @@ async function finishWave2() {
 }
 
 async function bootstrap(first) {
-  // P4：先恢复筛选（决定要懒加载哪些考试），再加载数据
+  // P4：先恢复筛选（决定要懒加载哪些考试），再加载数据。分享链接（URL 筛选）优先级最高。
+  const uf = first ? readUrlFilters() : null;
   if (first) {
-    if (!(loadLS('gk_keep_filters', false) && applySavedFilters(loadLS('gk_last_filters', null)))) {
+    if (uf && uf.exams) {
+      document.querySelectorAll('#examChecks input').forEach(c => { c.checked = uf.exams.includes(c.value); });
+    } else if (!(loadLS('gk_keep_filters', false) && applySavedFilters(loadLS('gk_last_filters', null)))) {
       applyFilterDefaults();
     }
   }
   await loadBuiltins(null, 1);
   fillRegionSelect();
+  if (uf) applyUrlFilterValues(uf);
   syncSortHeaders();
   renderResults();
   renderAnalysis();

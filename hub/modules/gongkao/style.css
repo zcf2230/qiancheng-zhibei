@@ -793,3 +793,6 @@ html[data-theme="dark"] .theme-seg button.on {
 .boot-tip { font-size: 11.5px; color: var(--ink-3); }
 @keyframes bootPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.06); } }
 @keyframes bootSlide { 0% { margin-left: -40%; } 100% { margin-left: 100%; } }
+
+/* 复制筛选链接按钮 */
+.copy-filter-link { margin-left: 10px; padding: 4px 12px; font-size: 12px; vertical-align: middle; }

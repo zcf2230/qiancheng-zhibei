@@ -14,7 +14,7 @@
   </script>
   <link rel="stylesheet" href="../../vendor/fonts/noto-serif-sc/600.css">
   <link rel="stylesheet" href="../../vendor/fonts/noto-serif-sc/700.css">
-  <link rel="stylesheet" href="style.css?v=20261111a">
+  <link rel="stylesheet" href="style.css?v=20261114a">
   <link rel="stylesheet" href="../../shared/hub-module.css">
 </head>
 <body>
@@ -129,7 +129,7 @@
           <span class="spacer"></span>
           <label class="toggle"><input type="checkbox" id="fFavOnly">只看收藏</label>
         </div>
-        <p class="filter-hint">默认只载入国考（首屏最快）；勾选其他考试会按需补载该考试职位表，首次勾选需等 1–3 秒。</p>
+        <p class="filter-hint">默认只载入国考（首屏最快）；勾选其他考试会按需补载该考试职位表，首次勾选需等 1–3 秒。<button class="chip copy-filter-link" id="copyFilterLink" type="button" title="把当前筛选条件生成链接，发给同学打开即同款筛选">🔗 复制筛选链接</button></p>
 
         <div class="filter-row cond-row">
           <span class="filter-label">条件</span>
@@ -455,7 +455,7 @@
     if (el) el.textContent = `${d.getFullYear()} 年 ${d.getMonth() + 1} 月 ${d.getDate()} 日 · 星期${w} ｜ 金融专业视角 · 五类考试岗位库`;
   })();
 </script>
-<script src="app.js?v=20261111a"></script>
+<script src="app.js?v=20261114a"></script>
 <script src="../../shared/hub-bridge.js"></script>
 </body>
 </html>
