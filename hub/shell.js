@@ -14,7 +14,7 @@
   };
   /* 发布版本号：必须与 index.html 里 shell.js/shell.css 的 ?v= 保持一致。
    * 一起 bump 后，新 Service Worker 安装即清旧缓存（见 sw.js）。 */
-  var HUB_BUILD = '20261114d';
+  var HUB_BUILD = '20261114f';
   var frame = null;
   var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
@@ -222,63 +222,6 @@
   }
 
   /* ---------------- 首页 ---------------- */
-  function lights(n) {
-    var pos = [[8,62],[16,38],[24,74],[33,52],[41,30],[48,66],[55,44],[62,72],[69,36],[76,58],[83,46],[90,70],[12,84],[88,26],[27,20],[59,88]];
-    var out = '';
-    for (var i = 0; i < n; i++) {
-      var p2 = pos[i % pos.length];
-      var d = 7 + (i % 5) * 2;
-      var dl = ((i % 7) * 1.3).toFixed(1);
-      var s2 = 2 + (i % 3);
-      out += '<i style="--x:' + p2[0] + '%;--y:' + p2[1] + '%;--d:' + d + 's;--dl:' + dl + 's;--s:' + s2 + 'px"></i>';
-    }
-    return out;
-  }
-  function marqueeItems() {
-    var st = window.HUB_STATS || {};
-    var now = new Date();
-    var out = [];
-    if (st.internOpen) out.push(['实习网申', st.internOpen + ' 家正在开放申请']);
-    if (st.internClosing7) out.push(['本周截止', st.internClosing7 + ' 家实习窗口将关闭']);
-    (window.HUB_TIMELINE || []).slice(0, 6).forEach(function (t) {
-      if (!t.start || !t.end) return;
-      var s = new Date(t.start + 'T00:00:00');
-      var e = new Date(t.end + 'T23:59:59');
-      if (now >= s && now <= e) out.push([MODULE_META[t.module] ? MODULE_META[t.module].name : t.exam, t.stage + ' · 剩 ' + Math.ceil((e - now) / 86400000) + ' 天']);
-    });
-    if (st.gkStatDate) out.push(['考公岗位', '国考过审 ' + (st.gkPassed || 0).toLocaleString('en-US') + ' 人（' + st.gkStatDate + '）']);
-    if (st.ky2027) out.push(['考研择校', '2027 简章覆盖 ' + st.ky2027 + '/' + st.kyTotal + ' 所']);
-    out.push(['全局搜索', '87,104 条索引覆盖三条路']);
-    return out;
-  }
-
-  function actionItems() {
-    var st = window.HUB_STATS || {};
-    var now = new Date();
-    var items = [];
-    (window.HUB_TIMELINE || []).forEach(function (t) {
-      if (!t.start || !t.end) return;
-      var s = new Date(t.start + 'T00:00:00');
-      var e = new Date(t.end + 'T23:59:59');
-      if (now >= s && now <= e && (e - now) / 86400000 <= 14) {
-        items.push({ m: t.module, txt: t.stage + '进入收尾', meta: '剩 ' + Math.ceil((e - now) / 86400000) + ' 天', href: '#/' + t.module, urgent: true });
-      } else if (now < s && (s - now) / 86400000 <= 7) {
-        items.push({ m: t.module, txt: t.stage + '即将开始', meta: Math.ceil((s - now) / 86400000) + ' 天后', href: '#/' + t.module, urgent: false });
-      }
-    });
-    if (st.internOpen) {
-      items.push({ m: 'intern', txt: st.internOpen + ' 家机构实习正在开放网申（另有 ' + st.internRolling + ' 家全年滚动）', meta: st.internClosing7 ? st.internClosing7 + ' 家本周截止' : '滚动更新', href: '#/intern', urgent: !!st.internClosing7 });
-    }
-    if (st.gkStatDate) {
-      items.push({ m: 'gongkao', txt: '国考报名过审人数已更新至 ' + st.gkStatDate + '：' + (st.gkPassed || 0).toLocaleString('en-US') + ' 人', meta: '竞争比可重算', href: '#/gongkao', urgent: false });
-    }
-    if (st.ky2027) {
-      items.push({ m: 'kaoyan', txt: '2027 简章信息已覆盖 ' + st.ky2027 + '/' + st.kyTotal + ' 所院校（科目 / 学费 / 拟招）', meta: '复试线明年 3 月批量更新', href: '#/kaoyan', urgent: false });
-    }
-    items.sort(function (a, b) { return (b.urgent ? 1 : 0) - (a.urgent ? 1 : 0); });
-    return items.slice(0, 6);
-  }
-
   function renderHome(el) {
     var st = window.HUB_STATS || {};
     var internTotal = st.internTotal || 3523;
@@ -391,7 +334,12 @@
               '</div>' +
             '</div>' +
             '<div class="hm-prov">' + ['浙江','江苏','广东','北京','福建','安徽','天津','湖南','湖北','四川','重庆','江西','河南','河北','山东','上海'].map(function (p) { return '<span class="hm-chip"><b>' + p + '</b> 职位表</span>'; }).join('') + '</div>' +
-            '<div class="hm-dsrc">考公快照 2026-11-10 · 四川全量 · 国考统计每日自动检查 · 实习按模块同一套窗口口径计算</div>' +
+            '<div class="hm-fresh">' +
+              '<div class="hm-fresh-item"><b>考研择校</b><span>2027 简章核对 · 2026-10 · 复试线待 2027-03</span></div>' +
+              '<div class="hm-fresh-item"><b>考公岗位</b><span>快照 ' + esc(st.gkSnapshot || '2026-11-10') + ' · 四川全量 · 国考统计每日自动检查</span></div>' +
+              '<div class="hm-fresh-item"><b>实习网申</b><span>整理 ' + esc(st.generatedAt || '2026-11-12') + ' · 官网链接逐条实测</span></div>' +
+            '</div>' +
+            '<div class="hm-dsrc">官方优先 · 不确定留空 · 第三方标注出处 · 收藏与进度仅存本机</div>' +
           '</div>' +
         '</div>' +
       '</section>' +
@@ -422,7 +370,8 @@
       var obs = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { b.style.width = w; obs.disconnect(); } }); }, { threshold: .3 });
       obs.observe(b);
       /* 兜底：IO 被节流（后台标签页/截图）时也保证填充到终值 */
-      setTimeout(function () { b.style.width = w; }, 1600);
+      var tm = setTimeout(function () { b.style.width = w; }, 1600);
+      onRouteCleanup(function () { obs.disconnect(); clearTimeout(tm); });
     });
     /* 页内滚动（不改 hash，避免被路由当成未知路由） */
     el.querySelectorAll('[data-scroll]').forEach(function (b) {
@@ -910,7 +859,7 @@
   function ensureSearchIndex() {
     if (window.HUB_SEARCH) return Promise.resolve(window.HUB_SEARCH);
     if (searchIndexPromise) return searchIndexPromise;
-    searchIndexPromise = fetch('shared/search-index.json.gz?v=20261112', { cache: 'default' })
+    searchIndexPromise = fetch('shared/search-index.json.gz?v=' + HUB_BUILD, { cache: 'default' })
       .then(function (r) {
         if (!r.ok) throw new Error('HTTP ' + r.status);
         return r.arrayBuffer();
@@ -924,8 +873,11 @@
         return new TextDecoder().decode(buf);
       })
       .then(function (txt) {
-        window.HUB_SEARCH = JSON.parse(txt);
-        return window.HUB_SEARCH;
+        var arr = JSON.parse(txt);
+        /* 预计算小写检索字段：避免每次按键对 8 万条重复 toLowerCase（搜索性能） */
+        for (var i = 0; i < arr.length; i++) { arr[i]._n = String(arr[i].n || '').toLowerCase(); arr[i]._s = String(arr[i].s || '').toLowerCase(); }
+        window.HUB_SEARCH = arr;
+        return arr;
       })
       .catch(function (e) { searchIndexPromise = null; throw e; });
     return searchIndexPromise;
@@ -942,7 +894,7 @@
     var q0 = decodeURIComponent((query.match(/q=([^&]*)/) || [])[1] || '');
     el.innerHTML =
       '<div class="page-head"><div class="page-kicker">Search</div><h2 class="page-title">全局搜索</h2>' +
-      '<p class="page-sub">一个搜索框同时命中考研院校、考公岗位与实习机构，共 87,104 条索引；点击结果直达模块并自动定位。</p></div>' +
+      '<p class="page-sub">一个搜索框同时命中考研院校、考公岗位与实习机构，共 <span id="searchTotal">88,134</span> 条索引；点击结果直达模块并自动定位。</p></div>' +
       '<div class="palette"><input id="searchInput" type="search" placeholder="搜院校 / 招录机关 / 职位 / 公司，如：北大 税务局 中信" value="' + esc(q0) + '"><kbd>ESC 清空</kbd></div>' +
       '<div id="searchResults" aria-live="polite"></div>';
     var input = el.querySelector('#searchInput');
@@ -971,7 +923,7 @@
       var qq = SEARCH_ALIAS[q] || q;
       for (var i = 0; i < idx.length; i++) {
         var e = idx[i];
-        var rank = Math.min(rankOf(e.n.toLowerCase(), e.s.toLowerCase(), qq), rankOf(e.n.toLowerCase(), e.s.toLowerCase(), q));
+        var rank = Math.min(rankOf(e._n, e._s, qq), rankOf(e._n, e._s, q));
         if (rank < 0) continue;
         e._r = rank;
         if (groups[e.t].length < 30) groups[e.t].push(e);
@@ -1014,14 +966,14 @@
     });
     if (!isTouch) setTimeout(function () { input.focus(); }, 80);
     box.innerHTML = '<div class="hub-placeholder">正在加载搜索索引…</div>';
-    ensureSearchIndex().then(function () { run(true); }).catch(function () {
+    ensureSearchIndex().then(function (idx) { var tot = el.querySelector('#searchTotal'); if (tot) tot.textContent = idx.length.toLocaleString('en-US'); run(true); }).catch(function () {
       box.innerHTML = '<div class="hub-placeholder">搜索索引加载失败，请刷新重试。</div>';
     });
   }
 
   /* ---------------- ⌘/Ctrl+K 快捷搜索浮层 ----------------
      复用全局搜索索引 / 别名 / 最近搜索；任意路由下唤起，选中直达模块。移动端用头部搜索按钮。 */
-  var palEl = null, palInput = null, palBox = null, palActive = -1, palTimer = null;
+  var palEl = null, palInput = null, palBox = null, palActive = -1, palTimer = null, palOpener = null;
   function palEnsure() {
     if (palEl) return;
     palEl = document.createElement('div');
@@ -1029,8 +981,8 @@
     palEl.hidden = true;
     palEl.innerHTML = '<div class="cmdk-mask"></div>' +
       '<div class="cmdk-panel" role="dialog" aria-modal="true" aria-label="快捷搜索">' +
-      '<div class="cmdk-bar"><span class="cmdk-ico" aria-hidden="true">⌕</span><input id="cmdkInput" type="search" placeholder="搜院校 / 机关 / 职位 / 公司…" autocomplete="off"><kbd>ESC</kbd></div>' +
-      '<div class="cmdk-results" id="cmdkResults" aria-live="polite"></div>' +
+      '<div class="cmdk-bar"><span class="cmdk-ico" aria-hidden="true">⌕</span><input id="cmdkInput" type="search" placeholder="搜院校 / 机关 / 职位 / 公司…" autocomplete="off" role="combobox" aria-label="快捷搜索" aria-expanded="false" aria-controls="cmdkResults" aria-autocomplete="list"><kbd>ESC</kbd></div>' +
+      '<div class="cmdk-results" id="cmdkResults" role="listbox" aria-live="polite" aria-label="搜索结果"></div>' +
       '<div class="cmdk-foot"><span>↑↓ 选择</span><span>Enter 打开</span><span>⌘/Ctrl+K 唤起</span></div>' +
       '</div>';
     document.body.appendChild(palEl);
@@ -1053,11 +1005,22 @@
       if (rc) { palInput.value = rc.dataset.recent; palRun(); palInput.focus(); return; }
       if (e.target.closest('.sr-item')) { recentPush(palInput.value.trim()); closePalette(); }
     });
+    /* 焦点陷阱：Tab 在面板内循环，不让焦点跑到背后的页面 */
+    palEl.addEventListener('keydown', function (e) {
+      if (e.key !== 'Tab') return;
+      var f = Array.prototype.filter.call(palEl.querySelectorAll('input, .sr-item, [data-recent], button, a[href]'), function (x) { return x.offsetParent !== null; });
+      if (!f.length) return;
+      var first = f[0], last = f[f.length - 1], cur = document.activeElement;
+      if (e.shiftKey && (cur === first || !palEl.contains(cur))) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && cur === last) { e.preventDefault(); first.focus(); }
+    });
   }
   function openPalette() {
     palEnsure();
+    palOpener = document.activeElement;
     palEl.hidden = false;
     document.body.classList.add('cmdk-open');
+    palInput.setAttribute('aria-expanded', 'true');
     palInput.value = ''; palActive = -1;
     palBox.innerHTML = '<div class="hub-placeholder">正在加载搜索索引…</div>';
     ensureSearchIndex().then(function () { palRun(); }).catch(function () {
@@ -1065,7 +1028,13 @@
     });
     setTimeout(function () { palInput.focus(); }, 30);
   }
-  function closePalette() { if (palEl) { palEl.hidden = true; document.body.classList.remove('cmdk-open'); } }
+  function closePalette() {
+    if (!palEl || palEl.hidden) return;
+    palEl.hidden = true; document.body.classList.remove('cmdk-open');
+    palInput.setAttribute('aria-expanded', 'false');
+    if (palOpener && palOpener.focus) { try { palOpener.focus(); } catch (e) {} }
+    palOpener = null;
+  }
   function palMove(d) {
     var items = palBox.querySelectorAll('.sr-item');
     if (!items.length) { palActive = -1; return; }
@@ -1085,7 +1054,7 @@
     var groups = { k: [], g: [], i: [] }; var idx = window.HUB_SEARCH; var qq = SEARCH_ALIAS[q] || q;
     for (var i = 0; i < idx.length; i++) {
       var e = idx[i];
-      var rank = Math.min(rankOf(e.n.toLowerCase(), e.s.toLowerCase(), qq), rankOf(e.n.toLowerCase(), e.s.toLowerCase(), q));
+      var rank = Math.min(rankOf(e._n, e._s, qq), rankOf(e._n, e._s, q));
       if (rank < 0) continue;
       e._r = rank; if (groups[e.t].length < 20) groups[e.t].push(e);
     }
@@ -1128,7 +1097,8 @@
       if (!t.start) return;
       var s = t.start.replace(/-/g, '');
       var ed = new Date((t.end || t.start) + 'T00:00:00'); ed.setDate(ed.getDate() + 1);
-      var es = ed.toISOString().slice(0, 10).replace(/-/g, '');
+      /* 用本地日期分量拼 DTEND：toISOString 会转 UTC，东八区把日期回退一天，单日节点会变零时长 */
+      var es = '' + ed.getFullYear() + ('0' + (ed.getMonth() + 1)).slice(-2) + ('0' + ed.getDate()).slice(-2);
       var tag = kindTag[t.kind] || '';
       var summary = '[' + (modName[t.module] || t.module) + (tag ? '·' + tag : '') + '] ' + (t.exam ? t.exam + ' ' : '') + t.stage;
       var basis = t.kind === 'official' ? '官方公告' : t.kind === 'third' ? '第三方口径' : '预计/推算，务必以当年官方通知为准';
@@ -1292,6 +1262,26 @@
     navigator.serviceWorker.register('sw.js?v=' + HUB_BUILD).catch(function () {});
   }
 
+  /* 离线感知：网络状态变化给轻提示（SW 已缓存内容离线可查） */
+  function initNetBadge() {
+    var badge = document.createElement('div');
+    badge.className = 'net-badge'; badge.setAttribute('role', 'status'); badge.setAttribute('aria-live', 'polite');
+    badge.hidden = true; document.body.appendChild(badge);
+    var hideTimer = null;
+    function render() {
+      clearTimeout(hideTimer);
+      if (navigator.onLine) {
+        badge.textContent = '✓ 已恢复在线'; badge.className = 'net-badge online'; badge.hidden = false;
+        hideTimer = setTimeout(function () { badge.hidden = true; }, 2600);
+      } else {
+        badge.textContent = '⚠ 当前离线 · 展示已缓存内容'; badge.className = 'net-badge offline'; badge.hidden = false;
+      }
+    }
+    window.addEventListener('online', render);
+    window.addEventListener('offline', render);
+    if (!navigator.onLine) render();
+  }
+
   /* 按 name|query 缓存已挂载的帧：同一模块同一入口再次进来直接复用，不重新加载 */
   var frameCache = Object.create(null);
   function mountFrame(name, el, query) {
@@ -1338,7 +1328,31 @@
         delete frameCache[oldK];
       }
     }
+    /* 加载失败兜底：超时或 error 时给出可重试的错误态，而不是一片空白 */
+    var failTimer = null;
+    function armFailTimer() {
+      clearTimeout(failTimer);
+      failTimer = setTimeout(function () { if (!frame.classList.contains('ready')) showFrameFail(); }, 15000);
+    }
+    function showFrameFail() {
+      if (wrap.querySelector('.frame-fail')) return;
+      var box = document.createElement('div');
+      box.className = 'frame-fail';
+      box.setAttribute('role', 'alert');
+      box.innerHTML = '<div class="ff-ico" aria-hidden="true">⚠</div><p>模块加载失败或超时，可能是网络波动。</p><button type="button" class="btn btn-primary ff-retry">重试</button>';
+      wrap.appendChild(box);
+      box.querySelector('.ff-retry').addEventListener('click', function () {
+        box.remove(); frame.classList.remove('ready');
+        if (!skel.parentNode) wrap.appendChild(skel);
+        armFailTimer();
+        frame.src = frame.dataset.src;
+      });
+    }
+    armFailTimer();
+    frame.addEventListener('error', function () { clearTimeout(failTimer); showFrameFail(); });
     frame.addEventListener('load', function () {
+      clearTimeout(failTimer);
+      var ff = wrap.querySelector('.frame-fail'); if (ff) ff.remove();
       frame.classList.add('ready');
       /* 考研的数据是异步 fetch 的，load 时列表还没渲染：正常靠 hub-module-ready 撤骨架，这里只兜底 */
       if (name === 'kaoyan') setTimeout(function () { if (skel.parentNode) skel.remove(); }, 1800);
@@ -1411,17 +1425,6 @@
       if (sk) sk.remove();
     }
   });
-
-  /* 离屏暂停 ambient 动效（光点/跑马灯/叙事光束） */
-  var ambientObs = ('IntersectionObserver' in window) ? new IntersectionObserver(function (ens) {
-    ens.forEach(function (en) { en.target.classList.toggle('paused', !en.isIntersecting); });
-  }, { threshold: 0 }) : null;
-  function bindAmbient(el) {
-    if (!ambientObs) return;
-    var targets = [el.querySelector('.hero'), el.querySelector('.story')].filter(Boolean);
-    targets.forEach(function (t) { ambientObs.observe(t); });
-    onRouteCleanup(function () { targets.forEach(function (t) { ambientObs.unobserve(t); }); });
-  }
 
   /* 流星：只在路径 / 时间线 / 搜索 / 关于四条非首页路由出现，低频、可降级 */
   var meteorLayer = null;
@@ -1574,6 +1577,7 @@
     render();
     scheduleWarm();
     registerSW();
+    initNetBadge();
   });
   window.addEventListener('hashchange', navigate);
 })();

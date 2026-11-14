@@ -14,6 +14,22 @@
 var VERSION = (new URL(self.location.href).searchParams.get('v')) || 'dev';
 var CACHE = 'hub-' + VERSION;
 
+/* 缓存条目上限：超出按插入序淘汰最旧的非核心条目，避免运行时缓存无限增长。
+ * 核心路径（离线首页必需）永不淘汰。 */
+var MAX_ENTRIES = 200;
+var CORE_PATHS = ['/', '/index.html', '/shell.js', '/shell.css', '/shared/timeline-data.js', '/shared/hub-stats.js', '/shared/tokens.css', '/shared/hub-module.css', '/vendor/gsap.min.js', '/vendor/ScrollTrigger.min.js'];
+function trimCache(cache) {
+  cache.keys().then(function (keys) {
+    var excess = keys.length - MAX_ENTRIES;
+    if (excess <= 0) return;
+    for (var i = 0; i < keys.length && excess > 0; i++) {
+      var p = new URL(keys[i].url).pathname;
+      if (CORE_PATHS.indexOf(p) >= 0) continue;
+      cache.delete(keys[i]); excess--;
+    }
+  }).catch(function () {});
+}
+
 /* 不可变资源：同 URL 内容永不变，可放心 cache-first */
 function isImmutable(url) {
   var p = url.pathname;
@@ -67,7 +83,7 @@ self.addEventListener('fetch', function (e) {
       return fetch(req).then(function (res) {
         if (res && res.status === 200 && res.type === 'basic') {
           var copy = res.clone();
-          caches.open(CACHE).then(function (c) { c.put(req, copy); }).catch(function () {});
+          caches.open(CACHE).then(function (c) { return c.put(req, copy).then(function () { trimCache(c); }); }).catch(function () {});
         }
         return res;
       });
@@ -81,7 +97,7 @@ self.addEventListener('fetch', function (e) {
     fetch(req, { cache: 'no-cache' }).then(function (res) {
       if (res && res.status === 200 && res.type === 'basic') {
         var copy = res.clone();
-        caches.open(CACHE).then(function (c) { c.put(req, copy); }).catch(function () {});
+        caches.open(CACHE).then(function (c) { return c.put(req, copy).then(function () { trimCache(c); }); }).catch(function () {});
       }
       return res;
     }).catch(function () {
