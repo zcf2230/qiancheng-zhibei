@@ -14,7 +14,7 @@
   };
   /* 发布版本号：必须与 index.html 里 shell.js/shell.css 的 ?v= 保持一致。
    * 一起 bump 后，新 Service Worker 安装即清旧缓存（见 sw.js）。 */
-  var HUB_BUILD = '20261114c';
+  var HUB_BUILD = '20261114d';
   var frame = null;
   var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
@@ -281,112 +281,153 @@
 
   function renderHome(el) {
     var st = window.HUB_STATS || {};
-    var acts = actionItems();
-    var lead = acts[0] || { m: 'path', txt: '答十道路径决策题，先看清再选', meta: '10 题', href: '#/path', urgent: false };
-    var rest = acts.slice(1);
-    var mq = marqueeItems();
-    var mqHtml = mq.concat(mq).map(function (x) { return '<span><b>' + esc(x[0]) + '</b>' + esc(x[1]) + '</span>'; }).join('');
+    var internTotal = st.internTotal || 3523;
+    var internOpen = st.internOpen || 0;
+    var tlLen = (window.HUB_TIMELINE || []).length || 40;
+    var chk = '<svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>';
     el.innerHTML =
-      '<section class="hero">' +
-        '<div class="hero-aurora"><i></i><i></i><i></i></div><div class="hero-lights">' + lights(10) + '</div>' +
-        '<svg class="hero-compass" viewBox="0 0 200 200" fill="none" aria-hidden="true">' +
-          '<circle cx="100" cy="100" r="92" stroke="rgba(242,239,230,.25)" stroke-width="1"/>' +
-          '<circle cx="100" cy="100" r="64" stroke="rgba(242,239,230,.14)" stroke-width="1"/>' +
-          '<path d="M100 24 L112 88 L100 100 L88 88 Z" fill="#37C2B4"/>' +
-          '<path d="M100 176 L88 112 L100 100 L112 112 Z" fill="rgba(242,239,230,.28)"/>' +
-          '<text x="100" y="18" text-anchor="middle" font-size="13" fill="rgba(242,239,230,.7)" font-family="serif">北</text>' +
-        '</svg>' +
-        '<div class="hero-inner">' +
-          '<div class="hero-eyebrow">2026 Qoder 高校创造力大赛 · StudyHack</div>' +
-          '<h1 id="heroTitle">前程指北</h1>' +
-          '<p class="hero-what">考研 · 考公 · 实习，一站式信息助手</p>' +
-          '<p class="hero-lead">三条路的时间窗挤在同一个学期。把择校简章、岗位竞争度、网申时间线放进同一个地方，先看清，再选择。</p>' +
-          '<div class="hero-cta">' +
+      '<section class="hm-hero">' +
+        '<div class="hm-wrap hm-hero-inner">' +
+          '<div class="hm-pill"><span class="hm-dot"></span>考研 · 考公 · 实习 一站式信息助手</div>' +
+          '<h1 class="hm-title">三条路，<span class="hm-a">一个坐标。</span></h1>' +
+          '<p class="hm-lead">三条路的时间窗挤在同一个学期。把择校简章、岗位竞争度、网申时间线放进同一个地方，先看清，再选择。</p>' +
+          '<div class="hm-cta">' +
             '<a class="btn btn-primary magnet" href="#/path">开始路径决策<span class="arr">→</span></a>' +
-            '<a class="btn btn-ghost magnet" href="#/timeline">查看统一时间线<span class="arr">→</span></a>' +
+            '<button class="btn btn-ghost" type="button" data-scroll="hm-modules">浏览三个模块</button>' +
+          '</div>' +
+          '<div class="hm-stats">' +
+            '<div class="hm-stat"><b data-n="81182">0</b><span>个考公岗位</span></div>' +
+            '<div class="hm-stat"><b data-n="' + internTotal + '">0</b><span>家实习机构</span></div>' +
+            '<div class="hm-stat"><b data-n="31">0</b><span>个考研大类</span></div>' +
+            '<div class="hm-stat"><b data-n="' + tlLen + '">0</b><span>个时间线节点</span></div>' +
           '</div>' +
         '</div>' +
-        '<div class="hero-marquee"><div class="hero-marquee-track">' + mqHtml + '</div></div>' +
-        '<div class="hero-scroll">SCROLL</div>' +
       '</section>' +
 
-      '<section class="section frontpage fp-cover reveal"><div class="fp-grid">' +
-        '<article class="fp-lead">' +
-          '<div class="fp-kicker">本周头版 · ' + esc(st.generatedAt || '') + '</div>' +
-          '<h2>' + esc(lead.txt) + '</h2>' +
-          '<p class="fp-meta"><span class="action-tag">' + esc((MODULE_META[lead.m] || {}).name || lead.m) + '</span>' + esc(lead.meta) + '</p>' +
-          '<a class="btn btn-primary magnet" href="' + lead.href + '">去处理<span class="arr">→</span></a>' +
-          (rest.length ? '<div class="fp-rest">' + rest.map(function (it) {
-            return '<a class="fp-rest-row" href="' + it.href + '"><span class="action-tag">' + esc((MODULE_META[it.m] || {}).name || it.m) + '</span><span>' + esc(it.txt) + '</span><em>' + esc(it.meta) + '</em></a>';
-          }).join('') + '</div>' : '') +
-        '</article>' +
-        '<figure class="fp-photo" data-ui><img src="assets/ui/ui-kaoyan.png" alt="考研择校模块真实界面：院校列表、筛选与冲稳保分档" width="800" height="520" loading="eager" decoding="async"><figcaption>考研择校 · 院校列表与分档（站内真实界面）</figcaption></figure>' +
-        '<aside class="fp-rail">' +
-          '<div class="fp-stat"><b data-n="211">0</b><span>所金融院校 · 31 专业大类</span></div>' +
-          '<div class="fp-stat"><b data-n="81182">0</b><span>个考公岗位</span></div>' +
-          '<div class="fp-stat"><b data-n="' + ((window.HUB_STATS || {}).internTotal || 3523) + '">0</b><span>家实习机构 · 12 个学科方向</span></div>' +
-          '<div class="fp-stat"><b data-n="' + ((window.HUB_TIMELINE || []).length || 40) + '">0</b><span>个时间线节点</span></div>' +
-        '</aside>' +
-      '</div></section>' +
+      '<section class="hm-sec" id="hm-modules">' +
+        '<div class="hm-wrap">' +
+          '<div class="hm-head reveal"><div class="hm-eyebrow">三个模块</div><h2 class="hm-h">点击卡片，<span class="hm-a">直接进入模块</span></h2>' +
+          '<p class="hm-sub">考研看院校与分数线，考公看岗位与竞争比，实习看机构与时间窗。各自深入，又共享同一套时间线与搜索。</p></div>' +
+          '<div class="hm-modules">' +
+            '<a class="hm-module reveal d1" href="#/kaoyan" aria-label="进入考研择校模块">' +
+              '<span class="hm-badge">31 大类</span>' +
+              '<div class="hm-mtop"><span class="hm-ic"><svg viewBox="0 0 24 24"><path d="M12 3L2 8l10 5 10-5-10-5z"/><path d="M6 10v5c0 1.5 3 3 6 3s6-1.5 6-3v-5"/></svg></span><div><h3>考研择校</h3><div class="hm-msub">院校 · 专业 · 分数线</div></div></div>' +
+              '<div class="hm-num">211</div><div class="hm-unit">所金融院校 · 覆盖全国</div>' +
+              '<ul><li>' + chk + '复试线 / 学费 / 拟招 / 报录比</li><li>' + chk + '填预估分，自动冲稳保分档</li><li>' + chk + '字段完整度透明，缺口直达官方简章</li></ul>' +
+              '<span class="hm-enter">进入考研择校<span class="arr">→</span></span>' +
+            '</a>' +
+            '<a class="hm-module reveal d2" href="#/gongkao" aria-label="进入考公岗位模块">' +
+              '<span class="hm-badge">18 类考试</span>' +
+              '<div class="hm-mtop"><span class="hm-ic"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg></span><div><h3>考公岗位</h3><div class="hm-msub">国考 · 省考 · 选调生</div></div></div>' +
+              '<div class="hm-num">81,182</div><div class="hm-unit">个岗位 · 多省逐岗全量</div>' +
+              '<ul><li>' + chk + '逐岗竞争比可测算</li><li>' + chk + '学历 / 专业 / 政治面貌多维筛选</li><li>' + chk + '筛选即链接，一键发给同学</li></ul>' +
+              '<span class="hm-enter">进入考公岗位<span class="arr">→</span></span>' +
+            '</a>' +
+            '<a class="hm-module reveal d3" href="#/intern" aria-label="进入实习网申模块">' +
+              '<span class="hm-badge">12 学科</span>' +
+              '<div class="hm-mtop"><span class="hm-ic"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg></span><div><h3>实习网申</h3><div class="hm-msub">机构 · 学科 · 倒计时</div></div></div>' +
+              '<div class="hm-num">' + internTotal.toLocaleString('en-US') + '</div><div class="hm-unit">家机构 · ' + internOpen.toLocaleString('en-US') + ' 家正在开放</div>' +
+              '<ul><li>' + chk + '官网 / 网申链接逐条实测</li><li>' + chk + '按截止倒计时排投递顺序</li><li>' + chk + '覆盖金融 / 理工 / 人文 / 艺术等</li></ul>' +
+              '<span class="hm-enter">进入实习网申<span class="arr">→</span></span>' +
+            '</a>' +
+          '</div>' +
+        '</div>' +
+      '</section>' +
 
-      '<section class="section cmp-band reveal"><div class="section-head"><div><div class="section-kicker">Compare</div><h2>三条路，一张表看清</h2></div>' +
-      '<p class="section-sub">同一学期里三条轨各自要付出什么、换回什么；「当前窗口」来自统一时间线，随日期自动更新。</p></div>' +
-      '<div class="cmp-grid">' +
-        '<table class="cmp-table"><thead><tr><th scope="col">维度</th><th scope="col">考研</th><th scope="col">考公</th><th scope="col">实习</th></tr></thead><tbody>' +
-          '<tr><th scope="row">当前窗口</th>' + ['kaoyan', 'gongkao', 'intern'].map(function (m) {
-            var cur = (window.HUB_TIMELINE || []).filter(function (t) { var n = new Date(); return t.module === m && t.start && t.end && n >= new Date(t.start + 'T00:00:00') && n <= new Date(t.end + 'T23:59:59'); })[0];
-            return '<td>' + (cur ? esc(cur.stage) + ' · 剩 ' + Math.ceil((new Date(cur.end + 'T23:59:59') - new Date()) / 86400000) + ' 天' : '暂无进行中的窗口') + '</td>';
-          }).join('') + '</tr>' +
-          '<tr><th scope="row">典型准备周期</th><td>10–12 个月，可脱产</td><td>3–6 个月，可兼顾</td><td>边做边投，滚动窗口</td></tr>' +
-          '<tr><th scope="row">竞争形态</th><td>一次初试+复试，线波动</td><td>岗位公开，竞争比可测算</td><td>多线并行，offer 比较</td></tr>' +
-          '<tr><th scope="row">成本与回报</th><td>学费+机会成本 → 学历平台</td><td>笔试+面试 → 稳定编制</td><td>无额外成本 → 薪资与留用</td></tr>' +
-          '<tr><th scope="row">结果确定性</th><td>较低（复试线波动）</td><td>中（数据透明）</td><td>较高（多保底）</td></tr>' +
-        '</tbody></table>' +
-        '<figure class="cmp-photo" data-ui><img src="assets/ui/ui-gongkao.png" alt="考公岗位模块真实界面：岗位表、竞争比与筛选" width="800" height="520" loading="lazy" decoding="async"><figcaption>考公岗位 · 竞争比可测算（站内真实界面）</figcaption></figure>' +
-      '</div></section>' +
+      '<section class="hm-sec hm-alt">' +
+        '<div class="hm-wrap">' +
+          '<div class="hm-head reveal"><div class="hm-eyebrow">统一时间线</div><h2 class="hm-h">三条路的时间窗，<span class="hm-a">对齐到同一学期</span></h2>' +
+          '<p class="hm-sub">国考报名、考研初试、实习网申往往撞在同几个月。把它们放在一起，一眼看清什么时候该做什么。</p></div>' +
+          '<div class="hm-tl">' +
+            '<div class="hm-tlcol reveal d1"><div class="hm-tlh"><b>考研</b></div>' +
+              '<div class="hm-tli"><span class="hm-when">9月</span><span class="hm-what">预报名<em>研招网填报</em></span></div>' +
+              '<div class="hm-tli"><span class="hm-when">10月</span><span class="hm-what">正式报名<em>确认报考信息</em></span></div>' +
+              '<div class="hm-tli"><span class="hm-when">12月</span><span class="hm-what">初试<em>全国统考</em></span></div>' +
+              '<div class="hm-tli"><span class="hm-when">3—4月</span><span class="hm-what">复试 / 调剂<em>各校陆续进行</em></span></div>' +
+            '</div>' +
+            '<div class="hm-tlcol reveal d2"><div class="hm-tlh"><b>考公</b></div>' +
+              '<div class="hm-tli"><span class="hm-when">10月</span><span class="hm-what">国考报名<em>职位查询与填报</em></span></div>' +
+              '<div class="hm-tli"><span class="hm-when">11—12月</span><span class="hm-what">国考笔试<em>行测 + 申论</em></span></div>' +
+              '<div class="hm-tli"><span class="hm-when">2—3月</span><span class="hm-what">省考联考<em>多省同日笔试</em></span></div>' +
+              '<div class="hm-tli"><span class="hm-when">4月起</span><span class="hm-what">面试 / 体检<em>分批进行</em></span></div>' +
+            '</div>' +
+            '<div class="hm-tlcol reveal d3"><div class="hm-tlh"><b>实习</b></div>' +
+              '<div class="hm-tli"><span class="hm-when">9—11月</span><span class="hm-what">秋招网申<em>应届主战场</em></span></div>' +
+              '<div class="hm-tli"><span class="hm-when">全年</span><span class="hm-what">日常实习<em>滚动开放</em></span></div>' +
+              '<div class="hm-tli"><span class="hm-when">2—4月</span><span class="hm-what">春招开放<em>补录与暑期</em></span></div>' +
+              '<div class="hm-tli"><span class="hm-when">5—8月</span><span class="hm-what">暑期实习<em>转正机会多</em></span></div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="hm-tlnote reveal"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>' + tlLen + ' 个节点可一键导出到手机 / 电脑日历，官方公告与预计推算分别标注。<a href="#/timeline">查看完整时间线 →</a></div>' +
+        '</div>' +
+      '</section>' +
 
-      '<section class="section intern-band reveal"><div class="ib-grid">' +
-        '<figure class="ib-photo" data-ui><img src="assets/ui/ui-intern.png" alt="实习网申模块真实界面：报头数据速览、批次筛选与公司库" width="800" height="520" loading="lazy" decoding="async"><figcaption>实习网申 · 批次与倒计时（站内真实界面）</figcaption></figure>' +
-        '<div class="ib-copy"><div class="section-kicker">Intern</div><h2>截止日期撞在一起时，先投哪家比投得多更重要</h2>' +
-        '<p>' + esc(String(st.internOpen || 0)) + ' 家机构正在开放网申' + (st.internClosing7 ? '，' + esc(String(st.internClosing7)) + ' 家本周截止' : '') + '。按倒计时排好投递顺序，把最想去的放在最前面。</p>' +
-        '<a class="btn btn-ghost magnet" href="#/intern">进入实习网申<span class="arr">→</span></a></div>' +
-      '</div></section>' +
+      '<section class="hm-sec">' +
+        '<div class="hm-wrap">' +
+          '<div class="hm-head reveal"><div class="hm-eyebrow">实用功能</div><h2 class="hm-h">为「随手查」<span class="hm-a">而设计</span></h2>' +
+          '<p class="hm-sub">在宿舍、在地铁、在宣讲会上，都能快速查到、记住、分享。</p></div>' +
+          '<div class="hm-feats">' +
+            '<div class="hm-feat reveal d1"><div class="hm-fic"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></div><h4>全局搜索</h4><p>按 <span class="hm-kbd">⌘K</span> 一个框命中 <span class="hm-kbd">88,134</span> 条院校、岗位与机构索引，回车直达。</p></div>' +
+            '<div class="hm-feat reveal d2"><div class="hm-fic"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007 0l3-3a5 5 0 00-7-7l-1 1"/><path d="M14 11a5 5 0 00-7 0l-3 3a5 5 0 007 7l1-1"/></svg></div><h4>筛选即链接</h4><p>整套筛选条件写进 URL，复制即可发给同学，打开就是同一屏。</p></div>' +
+            '<div class="hm-feat reveal d3"><div class="hm-fic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg></div><h4>我的三轨看板</h4><p>收藏、投递进度、择校清单聚成一页，可打印存 PDF，本机保存无需账号。</p></div>' +
+            '<div class="hm-feat reveal d1"><div class="hm-fic"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></div><h4>字段完整度透明</h4><p>学费 / 拟招 / 复试线覆盖率摊开给你看，缺口一键直达官方简章。</p></div>' +
+            '<div class="hm-feat reveal d2"><div class="hm-fic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div><h4>日历导出</h4><p>关键节点一次性导入日历，官方公告与预计推算在标题里分别标注。</p></div>' +
+            '<div class="hm-feat reveal d3"><div class="hm-fic"><svg viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0114 0M8.5 16a6 6 0 017 0M12 20h.01"/><path d="M2 8.82a15 15 0 0120 0"/></svg></div><h4>离线可用</h4><p>没网也能查已缓存的数据；在线时永远拿最新，不发旧版。</p></div>' +
+          '</div>' +
+        '</div>' +
+      '</section>' +
 
-      '<section class="section reveal"><div class="section-head"><div><div class="section-kicker">How</div><h2>三步用起来</h2></div></div>' +
-      '<div class="how-grid">' +
-        '<figure class="how-photo" data-ui><img src="assets/ui/ui-search.png" alt="全局搜索真实界面：一个搜索框同时命中院校、岗位与机构" width="800" height="520" loading="lazy" decoding="async"><figcaption>全局搜索 · 87,104 条索引一个框命中（站内真实界面）</figcaption></figure>' +
-        '<ol class="how-steps">' +
-          '<li><b>答十题</b><p>路径决策十题给出主推荐、维度理由与备选，结果可分享、可打印。</p></li>' +
-          '<li><b>看窗口</b><p>统一时间线把三条路的关键节点对齐，确认本周该动手的事与剩余天数。</p></li>' +
-          '<li><b>进模块深查</b><p>择校分档、筛岗看竞争比、按倒计时排投递；收藏与进度只留在本机。</p></li>' +
-        '</ol>' +
-      '</div></section>' +
+      '<section class="hm-sec hm-alt">' +
+        '<div class="hm-wrap">' +
+          '<div class="hm-head reveal"><div class="hm-eyebrow">数据</div><h2 class="hm-h">来自官方，<span class="hm-a">缺口摊开给你看</span></h2>' +
+          '<p class="hm-sub">每一个数字都标注出处与快照日期。官方优先、不确定就留空、第三方明确标注。</p></div>' +
+          '<div class="hm-data reveal d1">' +
+            '<div class="hm-dtop">' +
+              '<div><div class="hm-bigidx" data-n="88134">0</div><div class="hm-bigidx-l">条全局搜索索引<br>院校专业 + 考公岗位 + 实习机构</div></div>' +
+              '<div class="hm-cov">' +
+                '<div class="hm-covrow"><div class="hm-covtop"><b>考公竞争度覆盖</b><span>56.8%</span></div><div class="hm-covbar"><i data-w="56.8%"></i></div></div>' +
+                '<div class="hm-covrow"><div class="hm-covtop"><b>考研学费字段（金融试点）</b><span>77%</span></div><div class="hm-covbar"><i data-w="77%"></i></div></div>' +
+                '<div class="hm-covrow"><div class="hm-covtop"><b>实习官网链接实测</b><span>100%</span></div><div class="hm-covbar"><i data-w="100%"></i></div></div>' +
+              '</div>' +
+            '</div>' +
+            '<div class="hm-prov">' + ['浙江','江苏','广东','北京','福建','安徽','天津','湖南','湖北','四川','重庆','江西','河南','河北','山东','上海'].map(function (p) { return '<span class="hm-chip"><b>' + p + '</b> 职位表</span>'; }).join('') + '</div>' +
+            '<div class="hm-dsrc">考公快照 2026-11-10 · 四川全量 · 国考统计每日自动检查 · 实习按模块同一套窗口口径计算</div>' +
+          '</div>' +
+        '</div>' +
+      '</section>' +
 
-      '<section class="section reveal"><div class="editorial">' +
-        '<div class="ed-card"><div class="stamp">数据新鲜度</div><div class="fresh-grid">' +
-          '<div class="fresh-item"><b>考研择校</b><span>2027 简章项已核对（2026-10）· 复试线待 2027-03</span></div>' +
-          '<div class="fresh-item"><b>考公岗位</b><span>快照 2026-11-10 · 四川全量 · 国考统计每日自动检查</span></div>' +
-          '<div class="fresh-item"><b>实习网申</b><span>整理 2026-11-10 · 430 条官网链接实测 · 覆盖 12 个学科方向</span></div>' +
-        '</div></div>' +
-        '<div class="ed-card"><div class="stamp">数据与口径</div><ul>' +
-          '<li>官方优先：简章、职位表、公告以官方渠道为准，逐条标注年份与出处。</li>' +
-          '<li>留空不编：查不到可靠数据就留空或标「待核实」。</li>' +
-          '<li>第三方标注：非官方口径一律后缀标明来源。</li>' +
-          '<li>零账号：收藏与进度只留在你自己的浏览器。</li>' +
-        '</ul></div>' +
-      '</div></section>';
+      '<section class="hm-ctasec">' +
+        '<div class="hm-wrap">' +
+          '<div class="hm-ctabox reveal">' +
+            '<h2>现在开始，把选择看清楚</h2>' +
+            '<p>打开即用，无需注册。三条路的信息已经就位，剩下的，是你的决定。</p>' +
+            '<div class="hm-ctabtns"><a class="btn btn-primary magnet" href="#/path">开始路径决策<span class="arr">→</span></a><a class="btn btn-ghost" href="#/timeline">看统一时间线</a></div>' +
+          '</div>' +
+        '</div>' +
+      '</section>';
 
-    /* 主标题不做逐字隐藏动画：保证任何截图/慢设备下都完整可读 */
+    /* 首屏关键内容常显（不加 .reveal），仅做位移动画，保证截图/慢设备下完整可读 */
     if (motionOn()) {
       beginMotion(el, function () {
-        /* 标题分字交给 CSS 动画；这里只做位移，不动透明度，避免任何环境下文字消失 */
-        gsap.from(el.querySelectorAll('.hero-eyebrow, .hero-lead, .hero-cta'), { y: 22, duration: .55, stagger: .12, delay: .25, ease: MOTION.easeOut });
+        gsap.from(el.querySelectorAll('.hm-pill, .hm-lead, .hm-cta'), { y: 20, duration: .5, stagger: .1, delay: .2, ease: MOTION.easeOut });
       });
     }
     countUp(el);
     bindReveal(el);
     initMagnet(el);
-    bindAmbient(el);
+    /* 覆盖率条填充 */
+    el.querySelectorAll('.hm-covbar i[data-w]').forEach(function (b) {
+      var w = b.getAttribute('data-w');
+      if (reduceMotion) { b.style.width = w; return; }
+      var obs = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { b.style.width = w; obs.disconnect(); } }); }, { threshold: .3 });
+      obs.observe(b);
+      /* 兜底：IO 被节流（后台标签页/截图）时也保证填充到终值 */
+      setTimeout(function () { b.style.width = w; }, 1600);
+    });
+    /* 页内滚动（不改 hash，避免被路由当成未知路由） */
+    el.querySelectorAll('[data-scroll]').forEach(function (b) {
+      b.addEventListener('click', function () { var t = document.getElementById(b.getAttribute('data-scroll')); if (t) t.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' }); });
+    });
   }
 
   function initMagnet(el) {
