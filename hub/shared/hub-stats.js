@@ -2,6 +2,9 @@
  * 2026-11-11 重算：第六批再并入 45 家医药/建筑/旅游/体育/农林机构（全部官网实测通过），并补 94 条官网链接；
  * 按模块同一套 parseWindow/companyStatus 计算（audit/intern-stats-recompute.mjs 切片复用 app.js 函数），
  * 结果 open=1650、rolling=814、soon=14、closed=12、unknown=3、total=2493，与模块报头「1650 家正在开放网申」一致。
+ * 2026-11-12 重算：第七批（data-more6）并入 1030 家细分方向机构，total=3523、open=2552、rolling=942、closing7=0；
+ * 全局搜索索引同步重建为 k=3,429 / g=81,182 / i=3,523（合计 88,134 条）并已重新 gzip。
+ * 口径未变：audit/recalc-hub-stats.mjs 先用旧快照自检（1650/814/0/2493 逐项复现）后才落盘。
  * 2026-11-10 重算：实习数据五批共并入 1384 家理工/人文/社科/法学/艺术/教育/医药/公共机构，
  * 按 intern/js/app.js 的 parseWindow/companyStatus 逐家计算，结果 open=1615、rolling=810、total=2,448。
  * 同日修正「招满即止」误当截止日的问题：约 10-11 月的窗口不再在 11-10 当天被判「今天截止」。
@@ -13,4 +16,4 @@
  * 考公模块按勾选考试懒加载，首页数字为全库口径。
  * 国考过审：国家公务员局公告，2027 年度注册认证/网上报名/资格审查分别于 2026-10-23 18:00、
  * 10-24 18:00、10-26 18:00 结束，截至 10-26 18:00 通过资格审查 345 万人，竞争比约 97:1。 */
-window.HUB_STATS = {"generatedAt":"2026-11-11","gkSnapshot":"2026-11-10","internOpen":1650,"internRolling":814,"internClosing7":0,"internTotal":2493,"gkStatDate":"2026-10-26","gkPassed":3450000,"ky2027":47,"kyTotal":211};
+window.HUB_STATS = {"generatedAt":"2026-11-12","gkSnapshot":"2026-11-10","internOpen":2552,"internRolling":942,"internClosing7":0,"internTotal":3523,"gkStatDate":"2026-10-26","gkPassed":3450000,"ky2027":47,"kyTotal":211};

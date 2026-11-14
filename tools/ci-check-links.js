@@ -40,7 +40,7 @@ function loadCompanies() {
     fetch: () => Promise.resolve({ json: () => Promise.resolve({}) })
   };
   sb.globalThis = sb;
-  const order = ['data.plain.js', 'data-extra.js', 'data-more.js', 'data-more2.js', 'data-more3.js', 'data-more4.js', 'data-links.js', 'data-more5.js'];
+  const order = ['data.plain.js', 'data-extra.js', 'data-more.js', 'data-more2.js', 'data-more3.js', 'data-more4.js', 'data-links.js', 'data-more5.js', 'data-more6.js'];
   for (const f of order) {
     const p = path.join(JS, f);
     if (fs.existsSync(p)) vm.runInNewContext(fs.readFileSync(p, 'utf8'), sb, { filename: f });

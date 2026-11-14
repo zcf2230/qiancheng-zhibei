@@ -1,455 +1,456 @@
 {
- "checkedAt": "2026-11-11T02:51:15.690Z",
+ "checkedAt": "2026-11-12T06:18:52.158Z",
  "summary": {
-  "total": 709,
-  "ok": 635,
-  "warn": 56,
-  "bad": 18
+  "total": 827,
+  "ok": 753,
+  "warn": 16,
+  "bad": 58,
+  "remaining": 74
  },
  "entries": {
-  "dachang-20": {
-   "s": "bad",
-   "f": 3,
-   "first": "2026-10-27",
-   "why": "ECONNRESET"
-  },
   "soe-1": {
    "s": "bad",
-   "f": 4,
+   "f": 5,
    "first": "2026-10-26",
    "why": "HTTP 412"
   },
-  "soe-8": {
-   "s": "bad",
-   "f": 3,
-   "first": "2026-10-27",
-   "why": "ECONNRESET"
-  },
   "smallbeauty-192": {
    "s": "bad",
-   "f": 3,
+   "f": 4,
    "first": "2026-10-27",
    "why": "ERR_SSL_UNSAFE_LEGACY_RENEGOTIATION_DISABLED"
   },
-  "smallbeauty-236": {
-   "s": "bad",
-   "f": 5,
-   "first": "2026-10-25",
-   "why": "ERR_TLS_CERT_ALTNAME_INVALID"
-  },
   "smallbeauty-464": {
    "s": "bad",
-   "f": 3,
+   "f": 4,
    "first": "2026-10-27",
    "why": "ERR_SSL_UNSAFE_LEGACY_RENEGOTIATION_DISABLED"
   },
   "smallbeauty-509": {
    "s": "bad",
-   "f": 3,
+   "f": 4,
    "first": "2026-10-27",
    "why": "ERR_SSL_UNSAFE_LEGACY_RENEGOTIATION_DISABLED"
   },
   "smallbeauty-510": {
    "s": "bad",
-   "f": 4,
+   "f": 5,
    "first": "2026-10-26",
    "why": "ERR_SSL_UNSAFE_LEGACY_RENEGOTIATION_DISABLED"
   },
   "more-16": {
    "s": "bad",
-   "f": 6,
+   "f": 7,
    "first": "2026-10-24",
-   "why": "ETIMEDOUT"
+   "why": "ECONNREFUSED"
   },
   "more-131": {
    "s": "bad",
-   "f": 3,
+   "f": 4,
    "first": "2026-10-27",
-   "why": "HTTP 403"
-  },
-  "more-120": {
-   "s": "bad",
-   "f": 5,
-   "first": "2026-10-25",
    "why": "UND_ERR_CONNECT_TIMEOUT"
   },
   "more-277": {
    "s": "bad",
-   "f": 6,
+   "f": 7,
    "first": "2026-10-24",
    "why": "UND_ERR_CONNECT_TIMEOUT"
   },
   "brokers-4": {
    "s": "bad",
-   "f": 3,
+   "f": 4,
    "first": "2026-11-11",
    "why": "ERR_SSL_UNSAFE_LEGACY_RENEGOTIATION_DISABLED"
   },
   "brokers-11": {
    "s": "bad",
-   "f": 3,
+   "f": 4,
    "first": "2026-11-11",
    "why": "ERR_SSL_UNSAFE_LEGACY_RENEGOTIATION_DISABLED"
   },
   "brokers-15": {
    "s": "bad",
-   "f": 3,
+   "f": 4,
    "first": "2026-11-11",
    "why": "HTTP 412"
   },
   "brokers-17": {
    "s": "bad",
-   "f": 3,
+   "f": 4,
    "first": "2026-11-11",
    "why": "ERR_SSL_UNSAFE_LEGACY_RENEGOTIATION_DISABLED"
   },
   "funds-11": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "ERR_SSL_UNSAFE_LEGACY_RENEGOTIATION_DISABLED"
   },
   "funds-15": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "HTTP 521"
   },
   "banks-0": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "ERR_SSL_UNSAFE_LEGACY_RENEGOTIATION_DISABLED"
   },
   "banks-1": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "ERR_SSL_UNSAFE_LEGACY_RENEGOTIATION_DISABLED"
   },
   "banks-4": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "ERR_SSL_UNSAFE_LEGACY_RENEGOTIATION_DISABLED"
   },
   "banks-3": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "ERR_SSL_UNSAFE_LEGACY_RENEGOTIATION_DISABLED"
   },
   "banks-9": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "ERR_SSL_UNSAFE_LEGACY_RENEGOTIATION_DISABLED"
   },
   "banks-11": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "ERR_SSL_UNSAFE_LEGACY_RENEGOTIATION_DISABLED"
   },
   "banks-15": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "ERR_SSL_UNSAFE_LEGACY_RENEGOTIATION_DISABLED"
   },
   "banks-25": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "ERR_SSL_UNSAFE_LEGACY_RENEGOTIATION_DISABLED"
   },
   "dachang-13": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "ERR_SSL_UNSAFE_LEGACY_RENEGOTIATION_DISABLED"
   },
   "region-6": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
-   "why": "HTTP 412"
+   "why": "ERR_SSL_UNSAFE_LEGACY_RENEGOTIATION_DISABLED"
   },
   "region-4": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "HTTP 412"
   },
   "region-11": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "HTTP 403"
   },
   "region-13": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "ERR_SSL_UNSAFE_LEGACY_RENEGOTIATION_DISABLED"
   },
   "dachang-6": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "TypeError"
   },
   "buyout-10": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "UND_ERR_RES_CONTENT_LENGTH_MISMATCH"
   },
   "smallbeauty-193": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "ERR_SSL_UNSAFE_LEGACY_RENEGOTIATION_DISABLED"
   },
   "smallbeauty-199": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "ERR_SSL_UNSAFE_LEGACY_RENEGOTIATION_DISABLED"
   },
   "smallbeauty-210": {
-   "s": "warn",
-   "f": 2,
-   "first": "2026-11-11",
-   "why": "ERR_SSL_UNSAFE_LEGACY_RENEGOTIATION_DISABLED"
-  },
-  "smallbeauty-219": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "ERR_SSL_UNSAFE_LEGACY_RENEGOTIATION_DISABLED"
   },
   "smallbeauty-211": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "HTTP 521"
   },
   "smallbeauty-244": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "ERR_SSL_UNSAFE_LEGACY_RENEGOTIATION_DISABLED"
   },
-  "smallbeauty-305": {
-   "s": "warn",
-   "f": 2,
-   "first": "2026-11-11",
-   "why": "UNABLE_TO_VERIFY_LEAF_SIGNATURE"
-  },
-  "smallbeauty-337": {
-   "s": "bad",
-   "f": 2,
-   "first": "2026-11-11",
-   "why": "CERT_HAS_EXPIRED"
-  },
   "smallbeauty-458": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "HTTP 412"
   },
   "smallbeauty-463": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "ERR_SSL_UNSAFE_LEGACY_RENEGOTIATION_DISABLED"
   },
   "smallbeauty-468": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "ERR_SSL_UNSAFE_LEGACY_RENEGOTIATION_DISABLED"
   },
   "smallbeauty-471": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "ERR_SSL_UNSAFE_LEGACY_RENEGOTIATION_DISABLED"
   },
   "smallbeauty-479": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "ERR_SSL_UNSAFE_LEGACY_RENEGOTIATION_DISABLED"
   },
   "smallbeauty-499": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "ERR_SSL_UNSAFE_LEGACY_RENEGOTIATION_DISABLED"
   },
   "more-13": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "ERR_SSL_UNSAFE_LEGACY_RENEGOTIATION_DISABLED"
   },
   "more-15": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
-   "why": "HTTP 412"
+   "why": "ERR_SSL_DH_KEY_TOO_SMALL"
   },
   "more-14": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "HTTP 412"
   },
   "more-29": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "HTTP 412"
   },
   "more-44": {
-   "s": "warn",
-   "f": 2,
-   "first": "2026-11-11",
-   "why": "UNABLE_TO_VERIFY_LEAF_SIGNATURE"
-  },
-  "more-45": {
    "s": "bad",
-   "f": 2,
+   "f": 3,
    "first": "2026-11-11",
-   "why": "CERT_HAS_EXPIRED"
-  },
-  "more-53": {
-   "s": "warn",
-   "f": 2,
-   "first": "2026-11-11",
-   "why": "UNABLE_TO_VERIFY_LEAF_SIGNATURE"
+   "why": "HTTP 412"
   },
   "more-58": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "ERR_SSL_UNSAFE_LEGACY_RENEGOTIATION_DISABLED"
   },
-  "more-61": {
-   "s": "warn",
-   "f": 2,
-   "first": "2026-11-11",
-   "why": "UNABLE_TO_VERIFY_LEAF_SIGNATURE"
-  },
-  "more-72": {
-   "s": "warn",
-   "f": 2,
-   "first": "2026-11-11",
-   "why": "UNABLE_TO_VERIFY_LEAF_SIGNATURE"
-  },
   "more-90": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "ERR_SSL_UNSAFE_LEGACY_RENEGOTIATION_DISABLED"
   },
   "more-91": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "ERR_SSL_UNSAFE_LEGACY_RENEGOTIATION_DISABLED"
   },
   "more-101": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "ERR_SSL_UNSAFE_LEGACY_RENEGOTIATION_DISABLED"
   },
   "more-69": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "HTTP 403"
   },
   "more-50": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "HTTP 429"
   },
-  "more-123": {
-   "s": "warn",
-   "f": 2,
-   "first": "2026-11-11",
-   "why": "UNABLE_TO_VERIFY_LEAF_SIGNATURE"
-  },
   "more-128": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "HTTP 403"
   },
   "more-210": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "TypeError"
   },
   "more-295": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "HTTP 521"
   },
   "more-285": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "HTTP 412"
   },
   "more-301": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "HTTP 412"
   },
   "more-319": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "HTTP 521"
   },
-  "more-321": {
-   "s": "warn",
-   "f": 2,
-   "first": "2026-11-11",
-   "why": "ERR_SSL_UNSAFE_LEGACY_RENEGOTIATION_DISABLED"
-  },
-  "more-320": {
-   "s": "warn",
-   "f": 2,
-   "first": "2026-11-11",
-   "why": "UNABLE_TO_VERIFY_LEAF_SIGNATURE"
-  },
-  "more-324": {
-   "s": "warn",
-   "f": 2,
-   "first": "2026-11-11",
-   "why": "ECONNRESET"
-  },
   "mfg-5": {
-   "s": "warn",
-   "f": 2,
+   "s": "bad",
+   "f": 3,
    "first": "2026-11-11",
    "why": "ERR_SSL_UNSAFE_LEGACY_RENEGOTIATION_DISABLED"
   },
-  "tourism-8": {
+  "dachang-15": {
    "s": "warn",
    "f": 1,
-   "first": "2026-11-11",
+   "first": "2026-11-12",
+   "why": "HTTP 500"
+  },
+  "region-3": {
+   "s": "warn",
+   "f": 1,
+   "first": "2026-11-12",
+   "why": "ERR_SSL_UNSAFE_LEGACY_RENEGOTIATION_DISABLED"
+  },
+  "big4-18": {
+   "s": "warn",
+   "f": 1,
+   "first": "2026-11-12",
+   "why": "UND_ERR_CONNECT_TIMEOUT"
+  },
+  "brokers2-10": {
+   "s": "warn",
+   "f": 1,
+   "first": "2026-11-12",
+   "why": "UND_ERR_CONNECT_TIMEOUT"
+  },
+  "smallbeauty-357": {
+   "s": "warn",
+   "f": 1,
+   "first": "2026-11-12",
+   "why": "AbortError"
+  },
+  "more-84": {
+   "s": "warn",
+   "f": 1,
+   "first": "2026-11-12",
+   "why": "HTTP 412"
+  },
+  "more-141": {
+   "s": "warn",
+   "f": 1,
+   "first": "2026-11-12",
    "why": "ECONNRESET"
+  },
+  "more-287": {
+   "s": "warn",
+   "f": 1,
+   "first": "2026-11-12",
+   "why": "HTTP 412"
+  },
+  "more-300": {
+   "s": "warn",
+   "f": 1,
+   "first": "2026-11-12",
+   "why": "ERR_SSL_UNSAFE_LEGACY_RENEGOTIATION_DISABLED"
+  },
+  "more-302": {
+   "s": "warn",
+   "f": 1,
+   "first": "2026-11-12",
+   "why": "ECONNRESET"
+  },
+  "med2-36": {
+   "s": "warn",
+   "f": 1,
+   "first": "2026-11-12",
+   "why": "ERR_SSL_UNSAFE_LEGACY_RENEGOTIATION_DISABLED"
+  },
+  "med2-25": {
+   "s": "warn",
+   "f": 1,
+   "first": "2026-11-12",
+   "why": "UND_ERR_CONNECT_TIMEOUT"
+  },
+  "med2-43": {
+   "s": "warn",
+   "f": 1,
+   "first": "2026-11-12",
+   "why": "UND_ERR_CONNECT_TIMEOUT"
+  },
+  "sports-1": {
+   "s": "warn",
+   "f": 1,
+   "first": "2026-11-12",
+   "why": "UND_ERR_CONNECT_TIMEOUT"
+  },
+  "m6-air-27": {
+   "s": "warn",
+   "f": 1,
+   "first": "2026-11-12",
+   "why": "UND_ERR_CONNECT_TIMEOUT"
+  },
+  "m6-ags-27": {
+   "s": "warn",
+   "f": 1,
+   "first": "2026-11-12",
+   "why": "UND_ERR_CONNECT_TIMEOUT"
   }
  }
 }
