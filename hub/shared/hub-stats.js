@@ -16,4 +16,4 @@
  * 考公模块按勾选考试懒加载，首页数字为全库口径。
  * 国考过审：国家公务员局公告，2027 年度注册认证/网上报名/资格审查分别于 2026-10-23 18:00、
  * 10-24 18:00、10-26 18:00 结束，截至 10-26 18:00 通过资格审查 345 万人，竞争比约 97:1。 */
-window.HUB_STATS = {"generatedAt":"2026-11-12","gkSnapshot":"2026-11-10","internOpen":2552,"internRolling":942,"internClosing7":0,"internTotal":3523,"gkStatDate":"2026-10-26","gkPassed":3450000,"ky2027":47,"kyTotal":211};
+window.HUB_STATS = {"generatedAt":"2026-11-21","gkSnapshot":"2026-11-21","internOpen":2553,"internRolling":942,"internClosing7":2,"internTotal":3523,"gkStatDate":"2026-10-26","gkPassed":3450000,"ky2027":47,"kyTotal":211};

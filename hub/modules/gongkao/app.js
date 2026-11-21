@@ -14,8 +14,8 @@ const EXAM_FILES = {
   '国考': ['guokao2027.json', 'guokao2026.json', 'guokao2026_b.json', 'guokao2026_c.json'],
   '浙江选调': ['zhejiangxuandiao2027.json'],
   '浙江省考': ['zhejiang2027.json', 'zhejiang2026.json', 'zhejiang2026_b.json'],
-  '山东省考': ['shandong2026.json', 'shandong2026_b.json', 'shandong2026_c.json', 'shandong2026_d.json'],
-  '上海市考': ['shanghai2026.json', 'shanghai2026_b.json'],
+  '山东省考': ['shandong2027.json'],
+  '上海市考': ['shanghai2027.json'],
   '江苏省考': ['jiangsu2027.json'], '广东省考': ['guangdong2027.json'], '北京市考': ['beijing2027.json'], '福建省考': ['fujian2026.json'], '安徽省考': ['anhui2026.json'],
   '湖南省考': ['hunan2026.json'], '湖北省考': ['hubei2026.json'], '四川省考': ['sichuan2027.json'], '重庆市考': ['chongqing2026.json'], '天津市考': ['tianjin2027.json'], '江西省考': ['jiangxi2026.json'],
   '河南省考': ['henan2026.json'], '河北省考': ['hebei2026.json']
@@ -27,7 +27,7 @@ function checkedExams() {
 const KOUBEI_FILE = DATA_DIR + 'koubei.json';
 const CUSTOM_FILE = DATA_DIR + 'custom_imports.json';
 const LS_CUSTOM_KEY = 'gongkao.custom_imports';
-const DATA_UPDATED_AT = '2026-11-10';
+const DATA_UPDATED_AT = '2026-11-21';
 const readCustom = () => { try { return JSON.parse(localStorage.getItem(LS_CUSTOM_KEY) || 'null'); } catch { return null; } };
 const writeCustom = o => localStorage.setItem(LS_CUSTOM_KEY, JSON.stringify(o));
 const clearCustom = () => localStorage.removeItem(LS_CUSTOM_KEY);

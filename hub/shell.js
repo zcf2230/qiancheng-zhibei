@@ -14,7 +14,7 @@
   };
   /* 发布版本号：必须与 index.html 里 shell.js/shell.css 的 ?v= 保持一致。
    * 一起 bump 后，新 Service Worker 安装即清旧缓存（见 sw.js）。 */
-  var HUB_BUILD = '20261114f';
+  var HUB_BUILD = '20261121a';
   var frame = null;
   var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
@@ -239,7 +239,7 @@
             '<button class="btn btn-ghost" type="button" data-scroll="hm-modules">浏览三个模块</button>' +
           '</div>' +
           '<div class="hm-stats">' +
-            '<div class="hm-stat"><b data-n="81182">0</b><span>个考公岗位</span></div>' +
+            '<div class="hm-stat"><b data-n="99092">0</b><span>个考公岗位</span></div>' +
             '<div class="hm-stat"><b data-n="' + internTotal + '">0</b><span>家实习机构</span></div>' +
             '<div class="hm-stat"><b data-n="31">0</b><span>个考研大类</span></div>' +
             '<div class="hm-stat"><b data-n="' + tlLen + '">0</b><span>个时间线节点</span></div>' +
@@ -262,7 +262,7 @@
             '<a class="hm-module reveal d2" href="#/gongkao" aria-label="进入考公岗位模块">' +
               '<span class="hm-badge">18 类考试</span>' +
               '<div class="hm-mtop"><span class="hm-ic"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg></span><div><h3>考公岗位</h3><div class="hm-msub">国考 · 省考 · 选调生</div></div></div>' +
-              '<div class="hm-num">81,182</div><div class="hm-unit">个岗位 · 多省逐岗全量</div>' +
+              '<div class="hm-num">99,092</div><div class="hm-unit">个岗位 · 多省逐岗全量</div>' +
               '<ul><li>' + chk + '逐岗竞争比可测算</li><li>' + chk + '学历 / 专业 / 政治面貌多维筛选</li><li>' + chk + '筛选即链接，一键发给同学</li></ul>' +
               '<span class="hm-enter">进入考公岗位<span class="arr">→</span></span>' +
             '</a>' +
@@ -310,7 +310,7 @@
           '<div class="hm-head reveal"><div class="hm-eyebrow">实用功能</div><h2 class="hm-h">为「随手查」<span class="hm-a">而设计</span></h2>' +
           '<p class="hm-sub">在宿舍、在地铁、在宣讲会上，都能快速查到、记住、分享。</p></div>' +
           '<div class="hm-feats">' +
-            '<div class="hm-feat reveal d1"><div class="hm-fic"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></div><h4>全局搜索</h4><p>按 <span class="hm-kbd">⌘K</span> 一个框命中 <span class="hm-kbd">88,134</span> 条院校、岗位与机构索引，回车直达。</p></div>' +
+            '<div class="hm-feat reveal d1"><div class="hm-fic"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></div><h4>全局搜索</h4><p>按 <span class="hm-kbd">⌘K</span> 一个框命中 <span class="hm-kbd">106,044</span> 条院校、岗位与机构索引，回车直达。</p></div>' +
             '<div class="hm-feat reveal d2"><div class="hm-fic"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007 0l3-3a5 5 0 00-7-7l-1 1"/><path d="M14 11a5 5 0 00-7 0l-3 3a5 5 0 007 7l1-1"/></svg></div><h4>筛选即链接</h4><p>整套筛选条件写进 URL，复制即可发给同学，打开就是同一屏。</p></div>' +
             '<div class="hm-feat reveal d3"><div class="hm-fic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg></div><h4>我的三轨看板</h4><p>收藏、投递进度、择校清单聚成一页，可打印存 PDF，本机保存无需账号。</p></div>' +
             '<div class="hm-feat reveal d1"><div class="hm-fic"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></div><h4>字段完整度透明</h4><p>学费 / 拟招 / 复试线覆盖率摊开给你看，缺口一键直达官方简章。</p></div>' +
@@ -326,7 +326,7 @@
           '<p class="hm-sub">每一个数字都标注出处与快照日期。官方优先、不确定就留空、第三方明确标注。</p></div>' +
           '<div class="hm-data reveal d1">' +
             '<div class="hm-dtop">' +
-              '<div><div class="hm-bigidx" data-n="88134">0</div><div class="hm-bigidx-l">条全局搜索索引<br>院校专业 + 考公岗位 + 实习机构</div></div>' +
+              '<div><div class="hm-bigidx" data-n="106044">0</div><div class="hm-bigidx-l">条全局搜索索引<br>院校专业 + 考公岗位 + 实习机构</div></div>' +
               '<div class="hm-cov">' +
                 '<div class="hm-covrow"><div class="hm-covtop"><b>考公竞争度覆盖</b><span>56.8%</span></div><div class="hm-covbar"><i data-w="56.8%"></i></div></div>' +
                 '<div class="hm-covrow"><div class="hm-covtop"><b>考研学费字段（金融试点）</b><span>77%</span></div><div class="hm-covbar"><i data-w="77%"></i></div></div>' +
@@ -894,7 +894,7 @@
     var q0 = decodeURIComponent((query.match(/q=([^&]*)/) || [])[1] || '');
     el.innerHTML =
       '<div class="page-head"><div class="page-kicker">Search</div><h2 class="page-title">全局搜索</h2>' +
-      '<p class="page-sub">一个搜索框同时命中考研院校、考公岗位与实习机构，共 <span id="searchTotal">88,134</span> 条索引；点击结果直达模块并自动定位。</p></div>' +
+      '<p class="page-sub">一个搜索框同时命中考研院校、考公岗位与实习机构，共 <span id="searchTotal">106,044</span> 条索引；点击结果直达模块并自动定位。</p></div>' +
       '<div class="palette"><input id="searchInput" type="search" placeholder="搜院校 / 招录机关 / 职位 / 公司，如：北大 税务局 中信" value="' + esc(q0) + '"><kbd>ESC 清空</kbd></div>' +
       '<div id="searchResults" aria-live="polite"></div>';
     var input = el.querySelector('#searchInput');
@@ -1168,7 +1168,7 @@
       '<li>考公：国考报名期统计每天自动检查官方专题一次，有新通报自动写回并提示。</li>' +
       '<li>实习：官网链接程序化巡检，时间窗按往年规律推算并明确标注。</li>' +
       '</ul><p>收藏与投递进度保存在本机浏览器，不收集任何个人数据；换设备可用各模块内「导出 / 导入备份」迁移。</p></div></div>' +
-      '<div class="about-sec reveal"><h3>技术选型</h3><div><p>无框架原生实现：外壳 hash 路由 + iframe 沙箱、构建期生成的统一时间线（40 条）与全局搜索索引（87,104 条，含简称表与子序列匹配）、十题路径决策、三轨规划报告打印、可打印择校报告与 CSV 导出。全站静态资源 + 边缘缓存，打开即用。</p></div></div>' +
+      '<div class="about-sec reveal"><h3>技术选型</h3><div><p>无框架原生实现：外壳 hash 路由 + iframe 沙箱、构建期生成的统一时间线（40 条）与全局搜索索引（106,044 条，含简称表与子序列匹配）、十题路径决策、三轨规划报告打印、可打印择校报告与 CSV 导出。全站静态资源 + 边缘缓存，打开即用。</p></div></div>' +
       '<div class="letter reveal"><p>三岔路没有标准答案，只有看清之后自己选的那条。如果这个站能让你在某个路口少一点迷茫、少踩一个坑、多赶上一次截止日期，它就没有白做。愿你的每一个选择，都通向光明的未来。</p>' +
       '<p class="sig" style="font-size:14px">数据问题、功能建议或任何疑问，随时联系作者：邮箱 <a href="mailto:3426493108@qq.com">3426493108@qq.com</a> · 微信 Zaiayn。</p></div>';
     bindReveal(el);
@@ -1180,7 +1180,7 @@
     var meta = MODULE_META[name];
     var stat = '';
     if (name === 'kaoyan') stat = '211 所金融院校 · 31 专业大类';
-    else if (name === 'gongkao') stat = '81,182 个岗位 · 快照 ' + (st.gkSnapshot || st.generatedAt || '');
+    else if (name === 'gongkao') stat = '99,092 个岗位 · 快照 ' + (st.gkSnapshot || st.generatedAt || '');
     else if (name === 'intern') stat = (st.internOpen || 0) + ' 家开放中' + (st.internClosing7 ? ' · 本周截止 ' + st.internClosing7 + ' 家' : '');
     return '<div class="module-bar"><button class="menu-btn" type="button" aria-label="打开导航菜单">☰</button><span class="dot"></span><b>' + meta.name + '</b><span class="stat">' + esc(stat) + '</span>' +
       '<button class="fs-btn" type="button" aria-pressed="false">全屏</button>' +
