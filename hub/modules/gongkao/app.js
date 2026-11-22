@@ -18,7 +18,7 @@ const EXAM_FILES = {
   '上海市考': ['shanghai2027.json'],
   '江苏省考': ['jiangsu2027.json'], '广东省考': ['guangdong2027.json'], '北京市考': ['beijing2027.json'], '福建省考': ['fujian2026.json'], '安徽省考': ['anhui2026.json'],
   '湖南省考': ['hunan2026.json'], '湖北省考': ['hubei2026.json'], '四川省考': ['sichuan2027.json'], '重庆市考': ['chongqing2026.json'], '天津市考': ['tianjin2027.json'], '江西省考': ['jiangxi2026.json'],
-  '河南省考': ['henan2026.json'], '河北省考': ['hebei2026.json']
+  '河南省考': ['henan2026.json'], '河北省考': ['hebei2026.json'], '军队文职': ['junwen2026.json'], '事业单位': ['zjshiye2026.json', 'shiye_shanghai2026.json', 'shiye_anhui2026.json', 'shiye_shandong2026.json', 'shiye_guangdong2026.json', 'shiye_jiangsu2026.json', 'shiye_henan2026.json', 'shiye_hubei2026.json', 'shiye_hunan2026.json', 'shiye_liaoning2026.json', 'shiye_chongqing2026.json', 'shiye_shaanxi2026.json', 'shiye_sichuan2026.json', 'shiye_fujian2026.json', 'shiye_beijing2026.json', 'shiye_tianjin2026.json'], '三支一扶': ['zjsanzhi2026.json'], '选调生': ['xd_sichuan2027.json', 'xd_hunan2027.json', 'xd_anhui2027.json', 'xd_heilongjiang2027.json', 'xd_hainan2027.json', 'xd_yunnan2027.json', 'xd_xinjiang2027.json', 'xd_ningxia2027.json', 'xd_fujian2027.json']
 };
 const fileCache = new Map();
 function checkedExams() {
