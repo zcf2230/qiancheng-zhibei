@@ -244,6 +244,32 @@ body[data-route="home"] .hub-main { padding-top: 0; }
 .reason-box li { margin: 5px 0; color: rgba(239, 236, 227, .85); }
 .result-actions { position: relative; z-index: 1; display: flex; gap: 12px; margin-top: 22px; flex-wrap: wrap; }
 .result-alt { margin-top: 14px; color: var(--muted); font-size: 13px; }
+/* 三轨倾向对比条（深色 result-card 内） */
+.trio { position: relative; z-index: 1; margin-top: 26px; }
+.trio-cap { font-size: 12px; letter-spacing: .14em; color: rgba(239,236,227,.55); margin-bottom: 12px; }
+.trio-row { display: grid; grid-template-columns: 66px 1fr 58px; align-items: center; gap: 14px; padding: 8px 0; }
+.trio-lbl { font-size: 14px; font-weight: 600; color: rgba(239,236,227,.9); }
+.trio-row.top .trio-lbl { color: #8BE9DC; }
+.trio-bar { height: 10px; border-radius: 6px; background: rgba(242,239,230,.12); overflow: hidden; }
+.trio-bar i { display: block; height: 100%; border-radius: 6px; background: rgba(242,239,230,.5); }
+.trio-row.top .trio-bar i { background: var(--teal-bright); }
+.trio-val { font-size: 13px; color: rgba(239,236,227,.8); text-align: right; font-variant-numeric: tabular-nums; }
+.trio-row.top .trio-val { color: #8BE9DC; font-weight: 700; }
+/* 关于页 · 数据看板 */
+.db-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 6px 0 24px; }
+.db-kpi { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px 14px; text-align: center; }
+.db-kpi b { display: block; font-family: var(--font-serif); font-size: 26px; color: var(--teal); letter-spacing: -.5px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.db-kpi span { font-size: 12.5px; color: var(--muted); }
+.db-exam-h { font-size: 12px; letter-spacing: .14em; color: var(--muted); text-transform: uppercase; margin: 6px 0 12px; }
+.db-exams { display: flex; flex-direction: column; gap: 9px; }
+.db-exam { display: grid; grid-template-columns: 100px 1fr 76px; align-items: center; gap: 12px; }
+.db-exam-l { font-size: 13.5px; color: var(--text); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.db-exam-bar { height: 9px; border-radius: 5px; background: var(--teal-soft); overflow: hidden; }
+.db-exam-bar i { display: block; height: 100%; border-radius: 5px; background: var(--teal-bright); }
+.db-exam-v { font-size: 12.5px; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+.db-note { margin-top: 18px; font-size: 12.5px; color: var(--muted); }
+.db-placeholder { font-size: 13px; color: var(--muted); }
+@media (max-width: 620px) { .db-kpis { grid-template-columns: 1fr 1fr; } }
 .shiny-btn { position: relative; background: transparent; color: var(--teal-bright); border: 1px solid rgba(55, 194, 180, .5); overflow: hidden; }
 .shiny-btn::after { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 20%, rgba(55, 194, 180, .35) 40%, transparent 60%); transform: translateX(-120%); animation: shine 3.6s var(--ease) infinite; }
 @keyframes shine { 0% { transform: translateX(-120%); } 55%, 100% { transform: translateX(120%); } }

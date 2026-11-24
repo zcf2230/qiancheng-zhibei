@@ -14,7 +14,7 @@
   };
   /* 发布版本号：必须与 index.html 里 shell.js/shell.css 的 ?v= 保持一致。
    * 一起 bump 后，新 Service Worker 安装即清旧缓存（见 sw.js）。 */
-  var HUB_BUILD = '20261121e';
+  var HUB_BUILD = '20261124a';
   var frame = null;
   var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
@@ -310,7 +310,7 @@
           '<div class="hm-head reveal"><div class="hm-eyebrow">实用功能</div><h2 class="hm-h">为「随手查」<span class="hm-a">而设计</span></h2>' +
           '<p class="hm-sub">在宿舍、在地铁、在宣讲会上，都能快速查到、记住、分享。</p></div>' +
           '<div class="hm-feats">' +
-            '<div class="hm-feat reveal d1"><div class="hm-fic"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></div><h4>全局搜索</h4><p>按 <span class="hm-kbd">⌘K</span> 一个框命中 <span class="hm-kbd">161,917</span> 条院校、岗位与机构索引，回车直达。</p></div>' +
+            '<div class="hm-feat reveal d1"><div class="hm-fic"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></div><h4>全局搜索</h4><p>按 <span class="hm-kbd">⌘K</span> 一个框命中 <span class="hm-kbd">161,965</span> 条院校、岗位与机构索引，回车直达。</p></div>' +
             '<div class="hm-feat reveal d2"><div class="hm-fic"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007 0l3-3a5 5 0 00-7-7l-1 1"/><path d="M14 11a5 5 0 00-7 0l-3 3a5 5 0 007 7l1-1"/></svg></div><h4>筛选即链接</h4><p>整套筛选条件写进 URL，复制即可发给同学，打开就是同一屏。</p></div>' +
             '<div class="hm-feat reveal d3"><div class="hm-fic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg></div><h4>我的三轨看板</h4><p>收藏、投递进度、择校清单聚成一页，可打印存 PDF，本机保存无需账号。</p></div>' +
             '<div class="hm-feat reveal d1"><div class="hm-fic"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></div><h4>字段完整度透明</h4><p>学费 / 拟招 / 复试线覆盖率摊开给你看，缺口一键直达官方简章。</p></div>' +
@@ -326,7 +326,7 @@
           '<p class="hm-sub">每一个数字都标注出处与快照日期。官方优先、不确定就留空、第三方明确标注。</p></div>' +
           '<div class="hm-data reveal d1">' +
             '<div class="hm-dtop">' +
-              '<div><div class="hm-bigidx" data-n="161917">0</div><div class="hm-bigidx-l">条全局搜索索引<br>院校专业 + 考公岗位 + 实习机构</div></div>' +
+              '<div><div class="hm-bigidx" data-n="161965">0</div><div class="hm-bigidx-l">条全局搜索索引<br>院校专业 + 考公岗位 + 实习机构</div></div>' +
               '<div class="hm-cov">' +
                 '<div class="hm-covrow"><div class="hm-covtop"><b>考公竞争度覆盖</b><span>56.8%</span></div><div class="hm-covbar"><i data-w="56.8%"></i></div></div>' +
                 '<div class="hm-covrow"><div class="hm-covtop"><b>考研学费字段（金融试点）</b><span>77%</span></div><div class="hm-covbar"><i data-w="77%"></i></div></div>' +
@@ -699,6 +699,12 @@
       var pct = Math.max(6, Math.min(100, Math.round(score[top] / (MAXP[top] || 1) * 100)));
       var up = (window.HUB_TIMELINE || []).filter(function (t) { return t.module === top && t.end && new Date(t.end + 'T23:59:59') >= new Date(); }).slice(0, 2)
         .map(function (t) { return '<li>' + esc(t.dateLabel || t.start) + ' · ' + esc(t.stage) + '</li>'; }).join('');
+      var trioPct = function (k) { return Math.max(4, Math.min(100, Math.round(score[k] / (MAXP[k] || 1) * 100))); };
+      var trioHtml = '<div class="trio"><div class="trio-cap">三轨倾向对比（归一分）</div>' +
+        ['kaoyan', 'gongkao', 'intern'].map(function (k) {
+          var p = trioPct(k);
+          return '<div class="trio-row' + (k === top ? ' top' : '') + '"><span class="trio-lbl">' + esc(PATH_INFO[k].name) + '</span><span class="trio-bar"><i style="width:' + p + '%"></i></span><span class="trio-val">' + p + '%</span></div>';
+        }).join('') + '</div>';
       el.querySelector('#pathResult').innerHTML =
         '<div class="result-card reveal in">' +
           '<div class="result-top">' +
@@ -706,14 +712,18 @@
             '<div><div class="result-headline"><small>主推荐</small>' + esc(info.name) + '</div>' +
             '<p style="margin:10px 0 0;color:rgba(239,236,227,.72);max-width:520px">' + esc(info.why) + '</p></div>' +
           '</div>' +
+          trioHtml +
           (reasons[top].length ? '<div class="reason-box"><b>你的选择里支持这个推荐的维度</b><ul style="margin:0;padding-left:18px">' + reasons[top].map(function (r) { return '<li>' + esc(r) + '</li>'; }).join('') + '</ul></div>' : '') +
           (up ? '<div class="reason-box"><b>近期关键节点</b><ul style="margin:0;padding-left:18px">' + up + '</ul></div>' : '') +
           '<div class="result-actions">' +
             '<a class="btn btn-primary" href="' + info.href + '">进入' + esc(info.name) + '模块<span class="arr">→</span></a>' +
             '<button class="btn shiny-btn" id="btnHubReport">生成三轨规划报告（打印/PDF）</button>' +
+            '<button class="btn btn-ghost" id="btnDecisionCard" type="button">下载结论卡 PNG</button>' +
           '</div>' +
           '<div class="result-alt">备选：' + esc(PATH_INFO[second].name) + '（' + score[second] + ' 分）——' + esc(PATH_INFO[second].why) + '</div>' +
         '</div>' + '<p class="page-sub" style="margin-top:14px">' + esc(info.next) + '</p>';
+      var dcb = el.querySelector('#btnDecisionCard');
+      if (dcb) dcb.addEventListener('click', downloadDecisionCard);
       var ring = el.querySelector('#scoreRing');
       if (ring) {
         if (reduceMotion || shotMode) ring.style.setProperty('--p', pct);
@@ -762,6 +772,43 @@
       var d = e.target.closest('[data-qdot]');
       if (d) { cur = +d.dataset.qdot; renderStage(); }
     });
+
+    function downloadDecisionCard() {
+      if (!lastResult) return;
+      var r = lastResult, top = r.order[0], info = PATH_INFO[top];
+      var track = ['kaoyan', 'gongkao', 'intern'];
+      var pc = function (k) { return Math.max(4, Math.min(100, Math.round(r.score[k] / (MAXP[k] || 1) * 100))); };
+      var W = 1080, H = 1350;
+      var c = document.createElement('canvas'); c.width = W; c.height = H;
+      var x = c.getContext('2d');
+      var g = x.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#176B75'); g.addColorStop(1, '#0B3D43'); x.fillStyle = g; x.fillRect(0, 0, W, H);
+      x.save(); x.globalAlpha = .12; x.fillStyle = '#37C2B4';
+      x.beginPath(); x.arc(W - 100, 150, 280, 0, 7); x.fill();
+      x.beginPath(); x.arc(90, H - 120, 230, 0, 7); x.fill(); x.restore();
+      var rr = function (px, py, w, h, rad) { rad = Math.min(rad, h / 2, w / 2); x.beginPath(); x.moveTo(px + rad, py); x.arcTo(px + w, py, px + w, py + h, rad); x.arcTo(px + w, py + h, px, py + h, rad); x.arcTo(px, py + h, px, py, rad); x.arcTo(px, py, px + w, py, rad); x.closePath(); };
+      var wrap = function (txt, px, py, maxw, lh) { var chs = String(txt).split(''); var line = '', yy = py; for (var i = 0; i < chs.length; i++) { var t2 = line + chs[i]; if (x.measureText(t2).width > maxw && line) { x.fillText(line, px, yy); line = chs[i]; yy += lh; } else line = t2; } if (line) x.fillText(line, px, yy); return yy; };
+      x.textBaseline = 'alphabetic';
+      x.fillStyle = '#fff'; x.font = '800 46px "PingFang SC","Microsoft YaHei",sans-serif'; x.fillText('前程指北', 82, 118);
+      x.fillStyle = 'rgba(255,255,255,.72)'; x.font = '26px "PingFang SC",sans-serif'; x.fillText('三轨路径决策 · 结论卡', 84, 166);
+      x.fillStyle = 'rgba(255,255,255,.66)'; x.font = '30px "PingFang SC",sans-serif'; x.fillText('主推荐', 82, 372);
+      x.fillStyle = '#fff'; x.font = '800 132px "PingFang SC",sans-serif'; x.fillText(info.name, 80, 498);
+      x.fillStyle = '#8BE9DC'; x.font = '800 56px "PingFang SC",sans-serif'; x.fillText(pc(top) + '%', 84, 588);
+      var y0 = 700;
+      for (var i = 0; i < 3; i++) { var k = track[i], yy = y0 + i * 132, p = pc(k);
+        x.fillStyle = '#fff'; x.font = '700 44px "PingFang SC",sans-serif'; x.fillText(PATH_INFO[k].name, 82, yy);
+        x.fillStyle = 'rgba(255,255,255,.16)'; rr(250, yy - 34, 700, 26, 13); x.fill();
+        x.fillStyle = (k === top) ? '#8BE9DC' : 'rgba(255,255,255,.5)'; rr(250, yy - 34, 700 * p / 100, 26, 13); x.fill();
+        x.fillStyle = '#fff'; x.font = '700 36px "PingFang SC",sans-serif'; x.fillText(p + '%', 972, yy + 2);
+      }
+      x.fillStyle = 'rgba(255,255,255,.86)'; x.font = '30px "PingFang SC",sans-serif'; wrap(info.why, 82, 1150, 916, 44);
+      x.fillStyle = 'rgba(255,255,255,.55)'; x.font = '24px "PingFang SC",sans-serif'; x.fillText('基于十道路径决策题 · 结果仅供参考 · ' + new Date().toLocaleDateString('zh-CN') + ' · 前程指北', 82, H - 62);
+      c.toBlob(function (blob) {
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob); a.download = '前程指北-三轨结论卡.png';
+        document.body.appendChild(a); a.click();
+        setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1600);
+      });
+    }
 
     function buildReport() {
       if (!lastResult) return;
@@ -894,7 +941,7 @@
     var q0 = decodeURIComponent((query.match(/q=([^&]*)/) || [])[1] || '');
     el.innerHTML =
       '<div class="page-head"><div class="page-kicker">Search</div><h2 class="page-title">全局搜索</h2>' +
-      '<p class="page-sub">一个搜索框同时命中考研院校、考公岗位与实习机构，共 <span id="searchTotal">161,917</span> 条索引；点击结果直达模块并自动定位。</p></div>' +
+      '<p class="page-sub">一个搜索框同时命中考研院校、考公岗位与实习机构，共 <span id="searchTotal">161,965</span> 条索引；点击结果直达模块并自动定位。</p></div>' +
       '<div class="palette"><input id="searchInput" type="search" placeholder="搜院校 / 招录机关 / 职位 / 公司，如：北大 税务局 中信" value="' + esc(q0) + '"><kbd>ESC 清空</kbd></div>' +
       '<div id="searchResults" aria-live="polite"></div>';
     var input = el.querySelector('#searchInput');
@@ -1168,10 +1215,39 @@
       '<li>考公：国考报名期统计每天自动检查官方专题一次，有新通报自动写回并提示。</li>' +
       '<li>实习：官网链接程序化巡检，时间窗按往年规律推算并明确标注。</li>' +
       '</ul><p>收藏与投递进度保存在本机浏览器，不收集任何个人数据；换设备可用各模块内「导出 / 导入备份」迁移。</p></div></div>' +
-      '<div class="about-sec reveal"><h3>技术选型</h3><div><p>无框架原生实现：外壳 hash 路由 + iframe 沙箱、构建期生成的统一时间线（40 条）与全局搜索索引（161,917 条，含简称表与子序列匹配）、十题路径决策、三轨规划报告打印、可打印择校报告与 CSV 导出。全站静态资源 + 边缘缓存，打开即用。</p></div></div>' +
+      '<div class="about-sec reveal"><h3>数据看板</h3><div>' +
+      '<div class="db-kpis">' +
+        '<div class="db-kpi"><b id="dbTotal">…</b><span>条全局索引</span></div>' +
+        '<div class="db-kpi"><b id="dbG">…</b><span>考公岗位</span></div>' +
+        '<div class="db-kpi"><b id="dbK">…</b><span>考研院校专业</span></div>' +
+        '<div class="db-kpi"><b id="dbI">…</b><span>实习机构</span></div>' +
+      '</div>' +
+      '<div class="db-exam-h">考公岗位 · 按考试分布</div>' +
+      '<div class="db-exams" id="dbExams"><div class="db-placeholder">正在统计…</div></div>' +
+      '<p class="db-note">口径：官方优先、查不到留空、第三方标注出处；缺口本身就是信息。考公快照 <b id="dbSnap">—</b>；收藏与进度仅存本机，不上传。</p>' +
+      '</div></div>' +
+      '<div class="about-sec reveal"><h3>技术选型</h3><div><p>无框架原生实现：外壳 hash 路由 + iframe 沙箱、构建期生成的统一时间线（40 条）与全局搜索索引（161,965 条，含简称表与子序列匹配）、十题路径决策、三轨规划报告打印、可打印择校报告与 CSV 导出。全站静态资源 + 边缘缓存，打开即用。</p></div></div>' +
       '<div class="letter reveal"><p>三岔路没有标准答案，只有看清之后自己选的那条。如果这个站能让你在某个路口少一点迷茫、少踩一个坑、多赶上一次截止日期，它就没有白做。愿你的每一个选择，都通向光明的未来。</p>' +
       '<p class="sig" style="font-size:14px">数据问题、功能建议或任何疑问，随时联系作者：邮箱 <a href="mailto:3426493108@qq.com">3426493108@qq.com</a> · 微信 Zaiayn。</p></div>';
     bindReveal(el);
+    initAboutBoard(el);
+  }
+
+  function initAboutBoard(el) {
+    var st = window.HUB_STATS || {};
+    var snap = el.querySelector('#dbSnap'); if (snap) snap.textContent = (st.gkSnapshot || st.generatedAt || '—');
+    ensureSearchIndex().then(function (idx) {
+      var c = { k: 0, g: 0, i: 0 }, ex = {};
+      for (var j = 0; j < idx.length; j++) { var e = idx[j]; c[e.t] = (c[e.t] || 0) + 1; if (e.t === 'g') { var exn = String(e.id).split('|')[0]; ex[exn] = (ex[exn] || 0) + 1; } }
+      var set = function (id, v) { var n = el.querySelector('#' + id); if (n) n.textContent = (v || 0).toLocaleString('en-US'); };
+      set('dbTotal', idx.length); set('dbG', c.g); set('dbK', c.k); set('dbI', c.i);
+      var arr = Object.keys(ex).map(function (k) { return { k: k, v: ex[k] }; }).sort(function (a, b) { return b.v - a.v; });
+      var max = arr[0] ? arr[0].v : 1; var box = el.querySelector('#dbExams');
+      if (box) box.innerHTML = arr.map(function (o) {
+        var w = Math.max(3, Math.round(o.v / max * 100));
+        return '<div class="db-exam"><span class="db-exam-l">' + esc(o.k) + '</span><span class="db-exam-bar"><i style="width:' + w + '%"></i></span><span class="db-exam-v">' + o.v.toLocaleString('en-US') + '</span></div>';
+      }).join('');
+    }).catch(function () { var box = el.querySelector('#dbExams'); if (box) box.innerHTML = '<div class="db-placeholder">索引加载失败，稍后重试。</div>'; });
   }
 
   /* ---------------- 模块顶栏与路由 ---------------- */

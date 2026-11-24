@@ -796,3 +796,9 @@ html[data-theme="dark"] .theme-seg button.on {
 
 /* 复制筛选链接按钮 */
 .copy-filter-link { margin-left: 10px; padding: 4px 12px; font-size: 12px; vertical-align: middle; }
+/* 一句话找岗 */
+.nl-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; padding: 10px 12px; background: rgba(23,107,117,.08); border: 1px solid rgba(23,107,117,.2); border-radius: 12px; }
+.nl-ico { flex: none; font-size: 18px; color: #176B75; opacity: .8; }
+.nl-row input { flex: 1; min-width: 0; border: 0; background: transparent; font-size: 14.5px; color: inherit; outline: none; }
+.nl-row input::placeholder { color: #8a9691; }
+.nl-row .btn { flex: none; white-space: nowrap; }

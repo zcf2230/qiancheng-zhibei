@@ -466,6 +466,45 @@ function copyFilterLink() {
   else fallback();
 }
 
+/* 一句话找岗：前端把自然语言解析成现有筛选（不接大模型、不编数据，仅把已有筛选条件翻译出来） */
+const NL_EXAM_ALIAS = { '事业单位': '事业单位', '事业编': '事业单位', '选调生': '选调生', '选调': '选调生', '军队文职': '军队文职', '文职': '军队文职', '三支一扶': '三支一扶', '国考': '国考' };
+function nlParse(text) {
+  const s = String(text || '').trim(); if (!s) return null;
+  const examVals = [...document.querySelectorAll('#examChecks input')].map(x => x.value).filter(v => v !== '自定义导入');
+  const hits = new Set();
+  examVals.forEach(v => { if (s.includes(v)) hits.add(v); });
+  Object.keys(NL_EXAM_ALIAS).forEach(a => { if (s.includes(a) && examVals.includes(NL_EXAM_ALIAS[a])) hits.add(NL_EXAM_ALIAS[a]); });
+  let edu = ''; if (/硕士|研究生|博士/.test(s)) edu = 'master'; else if (/本科|学士|专科|大专/.test(s)) edu = 'bachelor';
+  let political = ''; if (/党员|中共党员/.test(s)) political = 'ccp';
+  let kw = s;
+  [...hits].forEach(v => { kw = kw.split(v).join(' '); });
+  Object.keys(NL_EXAM_ALIAS).forEach(a => { kw = kw.split(a).join(' '); });
+  kw = kw.replace(/硕士|研究生|博士|本科|学士|专科|大专|中共党员|党员|想进|想去|想找|进|找|做|的|岗位|工作|公务员|考公|考/g, ' ').replace(/\s+/g, ' ').trim();
+  return { exams: [...hits], edu, political, keyword: kw };
+}
+function applyNlSearch(text, showToast) {
+  const r = nlParse(text); if (!r) return;
+  const fMajor = document.getElementById('fMajor'); if (fMajor) fMajor.value = '';
+  const fRegion = document.getElementById('fRegion'); if (fRegion) fRegion.value = '';
+  if (document.getElementById('fEdu')) document.getElementById('fEdu').value = r.edu || 'bachelor';
+  if (document.getElementById('fPolitical')) document.getElementById('fPolitical').value = r.political || '';
+  const fk = document.getElementById('fKeyword'); if (fk) fk.value = r.keyword || '';
+  // 未指定考试 → 全选（搜索全部考试）；指定则只选这些
+  const allExams = [...document.querySelectorAll('#examChecks input')].map(x => x.value).filter(v => v !== '自定义导入');
+  const want = r.exams.length ? r.exams : allExams;
+  document.querySelectorAll('#examChecks input').forEach(c => { if (c.value !== '自定义导入') c.checked = want.includes(c.value); });
+  document.getElementById('examChecks').dispatchEvent(new Event('change', { bubbles: true }));
+  if (showToast && typeof toast === 'function') {
+    const parts = [];
+    if (r.exams.length) parts.push('考试 ' + r.exams.join('/'));
+    else parts.push('全部考试');
+    if (r.keyword) parts.push('关键词「' + r.keyword + '」');
+    if (r.edu) parts.push(r.edu === 'master' ? '硕士' : '本科');
+    if (r.political) parts.push('党员');
+    toast('已按：' + parts.join(' · '));
+  }
+}
+
 function filterPositions(f) {
   let list = allPositions.filter(p => {
     if (f.exams.length && !f.exams.includes(p.exam)) return false;
@@ -1346,6 +1385,10 @@ function bindEvents() {
   document.getElementById('btnExport').onclick = exportExcel;
   const cfl = document.getElementById('copyFilterLink');
   if (cfl) cfl.onclick = copyFilterLink;
+  const nlGo = document.getElementById('nlGo');
+  const nlSearch = document.getElementById('nlSearch');
+  if (nlGo) nlGo.onclick = () => applyNlSearch(nlSearch ? nlSearch.value : '', true);
+  if (nlSearch) nlSearch.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); applyNlSearch(nlSearch.value, true); } });
   document.querySelectorAll('.filter-card input, .filter-card select').forEach(el => {
     el.addEventListener('change', () => { syncSortHeaders(); renderResults(); saveLastFilters(); });
     if (el.type === 'text') el.addEventListener('keydown', ev => { if (ev.key === 'Enter') renderResults(); });

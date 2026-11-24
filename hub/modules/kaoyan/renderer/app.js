@@ -46,7 +46,7 @@ let VIEW = 'query';
 let SCORE = null;              // 分数匹配：用户输入的预估总分
 
 /* ---------- 多专业大类（方案A）：每个大类独立数据目录，金融保持默认 ---------- */
-const DATA_VERSION = 8;
+const DATA_VERSION = 9;
 const MAJORS = {
   fin:  { label: '金融',           z: '金融专硕',           x: '金融学硕',         zCode: '0251',   xCode: '0202', cat: '经济学', dir: '',     math: [['396', '考396经综'], ['数学三', '考数学三']] },
   cs:   { label: '计算机/电子信息', z: '计算机专硕',         x: '计算机学硕',       zCode: '0854',   xCode: '0812', cat: '工学',   dir: 'cs/',  math: [['数学一', '考数一'], ['数学二', '考数二'], ['408', '考408']] },
@@ -263,6 +263,31 @@ function ratioText(p) {
   if (e && a && a > 0) return (a / e).toFixed(1) + ' : 1';
   return '—';
 }
+// 官方逐校核验字段（2026 复试线原文 / 拟招 / 报录比）：卡片上只放短口径，全文进详情
+function planFull(p) { return (p && p.plan) || ''; }
+function planShort(p) {
+  const s = planFull(p);
+  if (!s || /^待核实/.test(s)) return '';
+  const m = s.match(/(\d[\d,]*)\s*人/);
+  return m ? m[1] + ' 人' : '';
+}
+function ratioVal(p) {
+  const s = String((p && p.ratio) || '');
+  if (!s) return null;
+  let m = s.match(/报录比\s*([\d.]+)/);
+  if (m) return parseFloat(m[1]);
+  m = s.match(/([\d,]+)\s*报考\s*\/\s*([\d,]+)\s*录取/);
+  if (!m) m = s.match(/(?:报考|报名)\s*([\d,]+)\s*人?[^；;]{0,24}?录取\s*([\d,]+)/);
+  if (m) {
+    const a = parseFloat(m[1].replace(/,/g, '')), e = parseFloat(m[2].replace(/,/g, ''));
+    if (a > 0 && e > 0) return a / e;
+  }
+  return null;
+}
+function ratioShort(p) {
+  const v = ratioVal(p);
+  return v ? v.toFixed(1) + ' : 1' : '';
+}
 // 取 URL 的域名，用于把「来源 1」换成用户能看懂的出处
 function hostOf(u) {
   try { return new URL(u).host.replace(/^www\./, ''); } catch (e) { return String(u).slice(0, 30); }
@@ -272,8 +297,8 @@ function filledCount(s) {
   let n = 0;
   for (const k of ['z', 'x']) {
     const p = s[k]; if (!p) continue;
-    for (const f of ['m', 'j', 'f', 'd', 'e', 'a', 'bk', 'emp']) {
-      if (p[f] && !/^待核实$/.test(String(p[f]))) n++;
+    for (const f of ['m', 'j', 'f', 'd', 'e', 'a', 'bk', 'emp', 'plan']) {
+      if (p[f] && !/^待核实/.test(String(p[f]))) n++;
     }
     if (p.l && Object.keys(p.l).length) n++;
   }
@@ -317,10 +342,15 @@ function progRow(sch, key) {
   const math = p.m ? esc(p.m) : '<span class="muted">待核实</span>';
   // 报录比需要「录取人数」和「报名人数」同时有值才算得出来，绝大多数院校不公布报名人数，
   // 所以这一格通常是「—」。不再重复显示"报名—"这类无信息量的字。
+  // 新增的官方逐校核验数据（plan/ratio）优先；卡片只放「拟招人数」与折算比值，全文进详情。
+  const pl = planShort(p), pf = planFull(p);
+  const enroll = pl || (p.e ? esc(p.e) : '<span class="muted">—</span>');
+  const ratio = ratioShort(p) || (ratioText(p) === '—' ? '' : ratioText(p));
+  const enrollLabel = pl ? '拟招' : (p.e ? '录取' : '拟招');
   return `<div class="program">
     <div class="p-name">${name}</div>
     <div class="cell"><b>复试线</b><span>${lineCell(p)}</span></div>
-    <div class="cell"><b>录取人数 / 报录比</b><span>${p.e ? esc(p.e) : '<span class="muted">—</span>'}${ratioText(p) === '—' ? '' : ' · ' + ratioText(p)}</span></div>
+    <div class="cell"><b>${enrollLabel} / 报录比</b><span${pf ? ` title="${esc(pf)}"` : ''}>${enroll}${ratio ? ' · ' + ratio : ''}</span></div>
     <div class="cell"><b>学费 / 学制</b><span>${p.f ? esc(p.f) : '<span class="muted">待核实</span>'} · ${p.d ? esc(p.d) : '—'}</span></div>
     <div class="cell"><b>初试科目</b><span>${math}${p.j ? ' + ' + esc(p.j) : ''}</span></div>
   </div>`;
@@ -471,7 +501,8 @@ function exportCurrentCsv() {
   const rows = [[
     '省份', '城市', '院校', '层次', '数据年份', '学位类型',
     '复试线', '复试线年份', '录取人数', '报录比', '学费', '学制',
-    '初试数学', '专业课', '参考书目', '就业口碑', '备注', '核实来源'
+    '初试数学', '专业课', '参考书目', '就业口碑', '备注', '核实来源',
+    '拟招人数（官方）', '2026复试线（官方原文）', '报录比（官方）', '校方出处', '核验快照'
   ]];
   let n = 0;
   for (const s of list) {
@@ -485,7 +516,8 @@ function exportCurrentCsv() {
         y ? p.l[y] : (p.la ? '≈' + p.la : ''), y || '',
         p.e || '', r === '—' ? '' : r,
         p.f || '', p.d || '', p.m || '', p.j || '', p.bk || '', p.emp || '', p.nt || '',
-        (s.sources || []).join(' ')
+        (s.sources || []).join(' '),
+        p.plan || '', p.line26 || '', p.ratio || '', (p.srcs || []).join(' '), p.snap || ''
       ]);
       n++;
     }
@@ -634,9 +666,11 @@ function detailSec(sch, key) {
   return `<div class="detail-sec"><h4>${nm}</h4>
     <div class="kv">
       <span class="k">历年复试线</span><span>${yearsBoxes(p)}</span>
+      ${p.line26 ? `<span class="k">2026复试线（原文）</span><span>${esc(p.line26)}</span>` : ''}
+      ${p.plan ? `<span class="k">拟招人数</span><span>${esc(p.plan)}</span>` : ''}
       <span class="k">录取人数</span><span>${p.e ? esc(p.e) : '<span class="muted">—</span>'}</span>
       <span class="k">报名人数</span><span>${p.a ? esc(p.a) : '<span class="muted">—</span>'}</span>
-      <span class="k">报录比</span><span>${ratioText(p)}</span>
+      <span class="k">报录比</span><span>${p.ratio ? esc(p.ratio) : ratioText(p)}</span>
       <span class="k">学费</span><span>${feeCell}</span>
       <span class="k">学制</span><span>${p.d ? esc(p.d) : '—'}</span>
       <span class="k">初试数学</span><span>${p.m ? esc(p.m) : '<span class="muted">待核实</span>'}</span>
@@ -644,7 +678,10 @@ function detailSec(sch, key) {
       ${p.bk ? `<span class="k">参考书目</span><span>${esc(p.bk)}</span>` : ''}
       ${p.emp ? `<span class="k">就业 / 口碑</span><span>${esc(p.emp)}</span>` : ''}
       ${p.nt ? `<span class="k">备注</span><span>${esc(p.nt)}</span>` : ''}
-    </div></div>`;
+      ${p.snap ? `<span class="k">核验快照</span><span>${esc(p.snap)}</span>` : ''}
+    </div>
+    ${(p.srcs && p.srcs.length) ? `<div class="linkrow">${p.srcs.slice(0, 6).map(u => `<a href="${esc(u)}" target="_blank" title="${esc(u)}">→ ${esc(hostOf(u))}</a>`).join('')}</div>` : ''}
+  </div>`;
 }
 function openDetail(id) {
   const s = byId(id);
@@ -819,8 +856,11 @@ function compareRows(schools, progKey) {
   return [
     ['层次', s => (s.tags || []).join(' / ')],
     ['复试线', s => { const p = P(s); const y = p.l && YEARS.find(y => p.l[y] > 0); return y ? `${p.l[y]}（${y}）` : (p.la ? `≈ ${p.la}` : ''); }],
+    ['2026复试线（原文）', s => P(s).line26 || ''],
+    ['拟招人数', s => P(s).plan || ''],
     ['录取人数', s => P(s).e || ''],
     ['报名 / 报录比', s => { const p = P(s); const r = ratioText(p); return (p.a ? p.a + ' · ' : '') + (r === '—' ? '' : r); }],
+    ['报录比（官方）', s => P(s).ratio || ''],
     ['学费', s => P(s).f || ''],
     ['学制', s => P(s).d || ''],
     ['初试数学', s => P(s).m || ''],
@@ -842,7 +882,7 @@ function toggleClamp(el) {
 const RADAR_DEFS = [
   { k: '上岸友好', get: (s, p) => { const v = parseLineVal(p); return v ? 500 - v : null; } },
   { k: '学费友好', get: (s, p) => { const v = feeTotalWan(p); return isFinite(v) ? 60 - v : null; } },
-  { k: '招生规模', get: (s, p) => parseCount(p.e) },
+  { k: '招生规模', get: (s, p) => parseCount(p.plan) || parseCount(p.e) },
   { k: '资料完整', get: s => filledCount(s) },
   { k: '科目友好', get: (s, p) => { const mm = String(p.m || ''); return /396/.test(mm) ? 3 : /数三|数学三/.test(mm) ? 2 : 2.2; } }
 ];
@@ -995,15 +1035,17 @@ function buildReport() {
     ['none', '差距大', '预估分低于复试线 15 分以上']
   ];
   const feeStr = p => { const w = feeTotalWan(p); return isFinite(w) ? Math.round(w * 10) / 10 + ' 万' : '—'; };
-  const table = arr => `<table><thead><tr><th>院校</th><th>省份</th><th>方向</th><th>复试线</th><th>分差</th><th>学费全程</th><th>录取</th></tr></thead><tbody>${
+  const table = arr => `<table><thead><tr><th>院校</th><th>省份</th><th>方向</th><th>复试线</th><th>分差</th><th>学费全程</th><th>拟招</th><th>录取</th></tr></thead><tbody>${
     arr.map(({ s, m }) => {
       const p = s[progKey] || {};
       const y = p.l && YEARS.find(y => p.l[y] > 0);
       const e = parseCount(p.e);
+      const pl = planShort(p) || (e ? e + ' 人' : '');
       return `<tr><td><b>${esc(s.name)}</b></td><td>${esc(s.prov)}</td><td>${progKey === 'z' ? '专硕' : '学硕'}</td>
         <td>${y ? p.l[y] + '（' + y + '）' : (p.la ? '≈ ' + esc(p.la) : '—')}</td>
         <td>${m ? (m.diff > 0 ? '+' : '') + m.diff : ''}</td>
         <td>${p.f ? feeStr(p) : '—'}</td>
+        <td>${pl || '—'}</td>
         <td>${e ? e + ' 人' : '—'}</td></tr>`;
     }).join('')}</tbody></table>`;
   const sec = (title, sub, arr) => arr.length
@@ -1025,12 +1067,15 @@ function buildReport() {
     ${groupDef.map(([k, label]) => `<div><b>${withScore.filter(x => x.m.key === k).length}</b><span>${label}</span></div>`).join('')}` : ''}
   </div>`;
 
+  const deepNote = ['cs', 'law', 'edu', 'mpacc'].includes(CUR_MAJOR)
+    ? '<br>其中计算机 / 法律 / 教育 / 会计四类为 2026-11-24 官方逐校核验：2026 复试线原文、学费与拟招均来自校方页面，报录比仅在校方公布时填写。'
+    : '';
   $('#report').innerHTML = `
     <div class="r-title">${majorCfg().label}考研择校报告</div>
     <div class="r-sub">生成时间 ${dateStr} · ${progCodeName(progKey)} · 数据版本 v${esc(String(DATA.version || '?'))}</div>
     <div class="r-sec"><h3>筛选条件</h3><p class="r-note">${esc(conds)}${SCORE != null ? `；预估总分 <b>${SCORE}</b> 分` : ''}</p>${kpis}</div>
     ${body}${favSec}
-    <div class="r-foot">数据来源：研招网（yz.chsi.com.cn）、各院校研究生院官网、当年招生简章及公开报道，整理自「前程指北·考研择校」。<br>
+    <div class="r-foot">数据来源：研招网（yz.chsi.com.cn）、各院校研究生院官网、当年招生简章及公开报道，整理自「前程指北·考研择校」。${deepNote}<br>
     本报告仅供择校参考，不构成报考建议；复试线、学费、招生人数每年变化，报考前务必以研招网和目标院校当年招生简章为准。标记「—」表示公开渠道无可靠数据，本工具不编造数字。</div>`;
   document.body.classList.add('report-mode');
   try { window.print(); } catch (e) {}
@@ -1044,10 +1089,18 @@ function updateStat() {
   const provs = new Set(DATA.schools.map(s => s.prov)).size;
   // 字段完整度透明化：当前大类专硕侧（无专硕则学硕侧）的学费/拟招/复试线覆盖率
   const side = majorCfg().z ? 'z' : 'x';
-  const has = (s, k) => { const p = s[side]; return !!(p && p[k] && (!(p[k] instanceof Object) || Object.keys(p[k]).length)); };
+  const ok = v => !!(v && !/^待核实/.test(String(v)));
+  const has = (s, k) => {
+    const p = s[side]; if (!p) return false;
+    const v = p[k];
+    if (k === 'l') return !!(v && Object.keys(v).length);
+    return ok(v);
+  };
+  const hasPlan = s => { const p = s[side]; return !!(p && (ok(p.plan) || ok(p.e))); };
   const pct = k => n ? Math.round(DATA.schools.filter(s => has(s, k)).length / n * 100) : 0;
+  const planPct = n ? Math.round(DATA.schools.filter(hasPlan).length / n * 100) : 0;
   $('#statLine').innerHTML = `共收录 <b style="color:var(--brand)">${n}</b> 所院校<br>覆盖 ${provs} 个省市 · 数据仅供参考` +
-    `<div class="ky-cov">字段完整度 学费 <b>${pct('f')}%</b> · 拟招 <b>${pct('e')}%</b> · 复试线 <b>${pct('l')}%</b>` +
+    `<div class="ky-cov">字段完整度 学费 <b>${pct('f')}%</b> · 拟招 <b>${planPct}%</b> · 复试线 <b>${pct('l')}%</b>` +
     `<a class="ky-cov-link" href="https://yz.chsi.com.cn/zsml/" target="_blank" rel="noopener" title="缺口以各校当年官方简章为准">查官方简章 →</a></div>`;
 }
 
