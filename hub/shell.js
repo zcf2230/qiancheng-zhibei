@@ -14,12 +14,13 @@
   };
   /* 发布版本号：必须与 index.html 里 shell.js/shell.css 的 ?v= 保持一致。
    * 一起 bump 后，新 Service Worker 安装即清旧缓存（见 sw.js）。 */
-  var HUB_BUILD = '20261124b';
+  var HUB_BUILD = '20261124c';
   var frame = null;
   var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
   var shotMode = /[?&]shot=1/.test(location.search);
-  if (shotMode) document.documentElement.classList.add('no-anim');
+  var liteMode = /[?&]lite=1/.test(location.search);
+  if (shotMode || liteMode) document.documentElement.classList.add('no-anim');
   if (isTouch) document.body.classList.add('touch');
 
   /* ---------------- 主题（外壳浅/深/随系统 + iframe 桥） ---------------- */
@@ -115,13 +116,16 @@
   /* ---------------- 光标 / 导航 / 揭示 / 倾斜 ---------------- */
   function initCursor() {
     if (isTouch || reduceMotion) return;
+    if (document.documentElement.classList.contains('no-anim')) return;   // lite / 截图模式：原生光标
     var q = (location.search.match(/[?&]cursor=([a-z]+)/) || [])[1];
     if (q) { try { localStorage.setItem('hub_cursor_v1', q); } catch (e) {} }
-    var mode = q || localStorage.getItem('hub_cursor_v1') || 'comet';
+    /* 默认用原生光标：comet 拖尾在大列表页会让合成线程持续忙碌，需要时用 ?cursor=comet 显式开启 */
+    var mode = q || localStorage.getItem('hub_cursor_v1') || 'minimal';
     if (['needle', 'comet', 'lens', 'minimal'].indexOf(mode) < 0) mode = 'needle';
     document.documentElement.setAttribute('data-cursor', mode);
-    if (mode !== 'minimal') document.documentElement.classList.add('custom-cursor');
     cursorEnabled = (mode !== 'minimal');
+    if (!cursorEnabled) return;
+    document.documentElement.classList.add('custom-cursor');
     var dot = document.getElementById('cursorDot');
     var ring = document.getElementById('cursorRing');
     if (!dot || !ring) return;

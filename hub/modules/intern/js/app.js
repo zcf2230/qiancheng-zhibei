@@ -1072,24 +1072,44 @@
     return true;
   }
 
-  /* ---------- 列表渲染（渐进式）----------
-     为什么分批：1064 张卡 = 约 2.8 万个 DOM 节点。一次性 innerHTML 写进去，浏览器要一口气
-     做样式计算 + 布局 + 绘制，在 CPU 降速 4 倍（≈中端手机）下实测「输入一个字」要 3.5 秒、
-     清空重画全量要 5 秒，期间完全无响应。
-     现在改成：先同步画前 FIRST_PAINT 张（首屏立刻有内容），剩下的按帧分批追加。
-     最终 DOM 仍然是完整的（Ctrl+F 能搜到），只是不再阻塞首帧。
-     ⚠️ 中途若筛选条件又变了，靠 renderGen 令牌让旧的这批直接放弃。 */
-  var FIRST_PAINT = 80;   // 首屏同步渲染张数
-  var CHUNK = 120;        // 之后每批追加张数
-  var renderGen = 0;
+  /* ---------- 列表渲染（滚动分页）----------
+     实习全量 3523 张卡 ≈ 9 万个 DOM 节点，一次性画满会把 WebView 拖到卡死。
+     现在首屏只画 60 张，滚动到底部附近再追加下一批，DOM 规模跟着用户行为增长。 */
+  var PAGE = 60;
 
-  function scheduleChunk(fn) {
-    if (typeof requestIdleCallback === "function") requestIdleCallback(fn, { timeout: 120 });
-    else setTimeout(fn, 0);
+  function ensureListMore(box) {
+    var el = document.getElementById("listMore");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "listMore"; el.className = "list-more";
+      box.parentNode.insertBefore(el, box.nextSibling);
+    }
+    return el;
+  }
+  function updateListMore(box) {
+    var el = ensureListMore(box);
+    var total = box._list ? box._list.length : 0;
+    var shown = box._shown || 0;
+    el.textContent = !total ? "" : (shown < total
+      ? "已显示 " + shown + " / 共 " + total + " 家 · 继续向下滚动加载"
+      : "已显示全部 " + total + " 家");
+  }
+  function appendMore() {
+    var box = $("#companyList");
+    if (!box || !box._list || box._shown >= box._list.length) return;
+    var next = Math.min(box._shown + PAGE, box._list.length);
+    box.insertAdjacentHTML("beforeend", box._list.slice(box._shown, next).map(cardHTML).join(""));
+    box._shown = next;
+    updateListMore(box);
+  }
+  function maybeLoadMore() {
+    var box = $("#companyList");
+    if (!box || !box._list || box._shown >= box._list.length) return;
+    var r = box.getBoundingClientRect();
+    if (r.bottom - window.innerHeight < 600) appendMore();
   }
 
   function renderList() {
-    var gen = ++renderGen;
     filters.qLower = (filters.q || "").toLowerCase();   // 只转一次，别在每个公司上重复转
     writeHash();
     // 折叠按钮上的「已选 N 项」提示（手机端可见）
@@ -1116,20 +1136,14 @@
     $("#emptyState").hidden = list.length > 0;
 
     var box = $("#companyList");
-    box.innerHTML = list.slice(0, FIRST_PAINT).map(cardHTML).join("");
-    if (list.length <= FIRST_PAINT) { delete box.dataset.rendering; return; }
-
-    // 还没画完：打上标记（自检和「导出/统计」类逻辑可以据此等待）
-    box.dataset.rendering = "1";
-    var i = FIRST_PAINT;
-    function more() {
-      if (gen !== renderGen) return;            // 期间又改了筛选条件，这批作废
-      box.insertAdjacentHTML("beforeend", list.slice(i, i + CHUNK).map(cardHTML).join(""));
-      i += CHUNK;
-      if (i < list.length) scheduleChunk(more);
-      else delete box.dataset.rendering;
-    }
-    scheduleChunk(more);
+    /* 收藏/投递进度变化会重渲同一份列表：保留已滚动加载的深度，别把用户弹回前 60 家 */
+    var prevShown = box._shown || 0, prevLen = box._list ? box._list.length : 0;
+    var keepDepth = prevLen === list.length && prevShown > PAGE;
+    box._list = list;
+    box._shown = keepDepth ? Math.min(prevShown, list.length) : Math.min(PAGE, list.length);
+    box.innerHTML = list.slice(0, box._shown).map(cardHTML).join("");
+    updateListMore(box);
+    requestAnimationFrame(maybeLoadMore);
   }
 
 
@@ -1495,6 +1509,7 @@
 
   /* ---------- 事件绑定 ---------- */
   function bindEvents() {
+    window.addEventListener("scroll", maybeLoadMore, { passive: true });
     $("#seasonSwitch").onclick = function (e) {
       var b = e.target.closest("button[data-season]");
       if (b && b.dataset.season !== activeSeason) setSeason(b.dataset.season);

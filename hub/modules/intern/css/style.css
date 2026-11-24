@@ -510,3 +510,6 @@ html[data-theme="dark"] #loginBtn { color: var(--bg); }
 /* 提示条：浅色态的深棕文字在深底上看不清，统一用金色变量 */
 html[data-theme="dark"] .alert-bar,
 html[data-theme="dark"] .alert-bar b { color: var(--gold); }
+
+/* 列表滚动分页提示 */
+.list-more { text-align: center; color: var(--muted); font-size: 12.5px; padding: 16px 0 28px; }

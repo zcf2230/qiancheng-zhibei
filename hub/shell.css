@@ -1059,3 +1059,9 @@ body[data-route="kaoyan"] .net-badge, body[data-route="gongkao"] .net-badge, bod
 
 /* 移动端 iframe 触控滚动（#11） */
 .hub-frame { -webkit-overflow-scrolling: touch; }
+/* 性能保护：minimal 模式完全隐藏自定义光标；模块页关闭全屏噪点合成层 */
+html[data-cursor="minimal"] .cursor-dot,
+html[data-cursor="minimal"] .cursor-ring { display: none !important; }
+body[data-route="kaoyan"] .grain,
+body[data-route="gongkao"] .grain,
+body[data-route="intern"] .grain { display: none; }
