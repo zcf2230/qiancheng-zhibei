@@ -35,7 +35,7 @@ for (const [u, label] of urls) {
     const r = await fetch('http://127.0.0.1:8123' + u);
     const body = u.endsWith('.gz') ? null : await r.text();
     const size = body == null ? 'binary' : body.length + 'B';
-    const has = u === '/modules/intern/' ? body.includes('js/data-more6.js') : '';
+    const has = u === '/modules/intern/' ? body.includes('data-more6.js') : '';
     console.log(`${r.status}  ${label.padEnd(10)} ${u}  ${size}${has ? '  含 data-more6 引入' : ''}`);
     if (r.status !== 200 || (has === false)) fail++;
   } catch (e) {
@@ -49,12 +49,14 @@ try {
   const html = await (await fetch('http://127.0.0.1:8123/modules/intern/')).text();
   const ids = ['companyList', 'statStrip', 'searchBox', 'discPanel', 'disciplineFilters', 'subFilters', 'categoryFilters'];
   const missing = ids.filter(id => !html.includes('id="' + id + '"'));
-  const order = ['data.plain.js', 'data-more5.js', 'data-more6.js', 'app.js'].map(f => html.indexOf(f));
+  const order = ['data.plain.js', 'app.js'].map(f => html.indexOf(f));
   const ordered = order.every((v, i) => v >= 0 && (i === 0 || v > order[i - 1]));
-  console.log(`渲染容器缺失: ${missing.length ? missing.join(',') : '无'}；脚本顺序 data→more5→more6→app ${ordered ? '正确' : '异常'}`);
-  if (missing.length || !ordered) fail++;
+  /* 实习改为渐进加载：首屏只静态引 data.plain + app，其余经 __INTERN_REST__ 空闲补载 */
+  const restOk = html.includes('__INTERN_REST__') && html.includes('data-more6.js');
+  console.log(`渲染容器缺失: ${missing.length ? missing.join(',') : '无'}；首屏 data.plain→app ${ordered ? '正确' : '异常'}；扩展队列含 more6 ${restOk ? '是' : '否'}`);
+  if (missing.length || !ordered || !restOk) fail++;
   const scripts = (html.match(/<script src="js\//g) || []).length;
-  console.log(`模块页共加载 ${scripts} 个 js 文件`);
+  console.log(`模块页静态加载 ${scripts} 个 js，其余扩展数据由 __INTERN_REST__ 补载`);
 } catch (e) {
   console.log('页面检查失败: ' + e.message);
   fail++;

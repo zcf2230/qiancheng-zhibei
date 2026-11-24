@@ -1111,7 +1111,8 @@
     var subTxt = filters.sub ? " · 方向：" + esc(filters.sub) : "";
     $("#resultCount").innerHTML = (list.length === baseTotal
       ? "共 <b>" + list.length + "</b> 家" + (summerOnlyEnabled() ? "已收录暑期批机构" : "机构")
-      : "筛出 <b>" + list.length + "</b> 家 · " + baseLabel) + discTxt + subTxt;
+      : "筛出 <b>" + list.length + "</b> 家 · " + baseLabel) + discTxt + subTxt +
+      (window.__INTERN_REST_LOADING__ ? " · 数据补载中…" : "");
     $("#emptyState").hidden = list.length > 0;
 
     var box = $("#companyList");
@@ -1601,11 +1602,7 @@
   }
 
   /* ---------- 启动 ---------- */
-  function init() {
-    var now = new Date();
-    $("#todayText").textContent = "今天是 " + now.getFullYear() + " 年 " + (now.getMonth() + 1) + " 月 " + now.getDate() + " 日";
-    $("#updatedAt").textContent = DATA.updatedAt || "整理中";
-    // 数据行补 id；新条目自带学科，老条目按主营/专业/技能推断（详情里会标注）
+  function normalizeCompanies() {
     DATA.companies.forEach(function (c, i) {
       if (!c.id) c.id = "c" + i;
       applyDefaults(c);
@@ -1615,6 +1612,13 @@
       }
       if (!c.subdirs || !c.subdirs.length) c.subdirs = inferSubdirs(c);
     });
+  }
+  function init() {
+    var now = new Date();
+    $("#todayText").textContent = "今天是 " + now.getFullYear() + " 年 " + (now.getMonth() + 1) + " 月 " + now.getDate() + " 日";
+    $("#updatedAt").textContent = DATA.updatedAt || "整理中";
+    // 数据行补 id；新条目自带学科，老条目按主营/专业/技能推断（详情里会标注）
+    normalizeCompanies();
     applySeasonUI();
     var fromHash = hashToFilters();   // 从网址恢复筛选（要在 renderCategories 之前，chip 高亮依赖 filters.cats）
     var lv = $("#legendVerifiedDate");
@@ -1703,6 +1707,52 @@
     };
     // 供外壳的「搜索直达」与档案预填使用：init 完成后才允许派发筛选事件
     window.__INTERN_READY__ = true;
+    startRestLoad();
+  }
+
+  /* ---------- 数据补载：首屏先渲染 data.plain，其余扩展文件空闲时按序加载 ---------- */
+  var restStarted = false, restRefreshTimer = 0;
+  function scheduleRestRefresh() {
+    if (restRefreshTimer) return;
+    restRefreshTimer = setTimeout(function () {
+      restRefreshTimer = 0;
+      renderStatStrip(); updateFacetCounts(); renderList();
+    }, 200);
+  }
+  function finishRestLoad() {
+    window.__INTERN_REST_LOADING__ = false;
+    clearTimeout(restRefreshTimer); restRefreshTimer = 0;
+    normalizeCompanies();
+    $("#updatedAt").textContent = DATA.updatedAt || "整理中";
+    renderFreshness(); renderStatStrip(); renderCategories(); renderDisciplines(); renderSubDirs();
+    renderAlert(); updateFacetCounts();
+    tabDirty.timeline = tabDirty.progress = tabDirty.channels = tabDirty.guides = true;
+    if (currentTab !== "list") ensureTab(currentTab);
+    renderList();
+    window.__INTERN_REST_DONE__ = true;
+    document.dispatchEvent(new Event("intern-data-rest-loaded"));
+  }
+  function startRestLoad() {
+    var files = (window.__INTERN_REST__ || []).slice();
+    if (restStarted || !files.length) return;
+    restStarted = true;
+    window.__INTERN_REST_LOADING__ = true;
+    var i = 0;
+    function step() {
+      if (i >= files.length) { finishRestLoad(); return; }
+      var s = document.createElement("script");
+      s.src = "js/" + files[i++];
+      s.async = true;
+      s.onload = function () {
+        normalizeCompanies();
+        if (i < files.length) scheduleRestRefresh();
+        step();
+      };
+      s.onerror = function () { step(); };
+      document.body.appendChild(s);
+    }
+    if (typeof requestIdleCallback === "function") requestIdleCallback(step, { timeout: 600 });
+    else setTimeout(step, 120);
   }
   document.addEventListener("DOMContentLoaded", boot);
 
@@ -1809,6 +1859,13 @@
       else if (n > 60) clearInterval(t);
     }, 250);
   }
+  function applyFocus() {
+    var f = new URLSearchParams(location.search).get("focus");
+    if (!f) return;
+    var c = DATA.companies.filter(function (x) { return x.id === f; })[0];
+    var sb = document.getElementById("searchBox");
+    if (c && sb && !sb.value) { sb.value = c.name; sb.dispatchEvent(new Event("input")); }
+  }
   function applyProfile() {
     // 等模块 init 绑定完筛选事件再派发，否则「搜索直达」只填了输入框、列表没筛
     if (!window.__INTERN_READY__) { setTimeout(applyProfile, 150); return; }
@@ -1821,13 +1878,10 @@
           if (hit) { sel.value = hit.value; sel.dispatchEvent(new Event("change")); }
         }
       }
-      var f = new URLSearchParams(location.search).get("focus");
-      if (f) {
-        var c = DATA.companies.filter(function (x) { return x.id === f; })[0];
-        var sb = document.getElementById("searchBox");
-        if (c && sb) { sb.value = c.name; sb.dispatchEvent(new Event("input")); }
-      }
+      applyFocus();
     } catch (e) {}
   }
   ready(applyProfile);
+  // 首屏只加载了基础数据；扩展数据补载完成后，再补一次定位（目标可能就在后补的文件里）
+  document.addEventListener("intern-data-rest-loaded", applyFocus);
 })();

@@ -40,7 +40,7 @@ async function readJson(url) {
   try {
     // 逐岗 JSON 已压成 .gz（包体从 64MB 降到 4MB 左右）；
     // 若托管层自动按 Content-Encoding 解压，arrayBuffer 会直接是 JSON 文本。
-    let r = await fetch(url + '.gz', { cache: 'default', signal: ctrl.signal });
+    let r = await fetch(url + '.gz', { cache: 'default', credentials: 'omit', signal: ctrl.signal });
     if (r.ok) {
       const buf = await r.arrayBuffer();
       const bytes = new Uint8Array(buf);
@@ -1733,21 +1733,23 @@ async function bootstrap(first) {
   fillRegionSelect();
   if (uf) applyUrlFilterValues(uf);
   syncSortHeaders();
+  if (first) bindEvents();
+  // 首屏只出岗位表；图表/收藏/对比/备考等面板与往届数据放到空闲时补，别挡住第一帧
   renderResults();
-  renderAnalysis();
-  renderFavs();
-  renderCompare();
-  renderReviews();
-  renderPrep();
-  renderDataSummary();
   updateShell();
-  if (first) {
-    bindEvents();
-    checkReminders();
-  }
   removeBootSplash();
-  // 首屏已出，剩下的往届数据在后台补；期间用户改了勾选就由 change 事件走全量重载
-  if (pendingWave2()) finishWave2();
+  const afterFirstPaint = () => {
+    renderAnalysis();
+    renderFavs();
+    renderCompare();
+    renderReviews();
+    renderPrep();
+    renderDataSummary();
+    if (first) checkReminders();
+    if (pendingWave2()) finishWave2();
+  };
+  if (typeof requestIdleCallback === 'function') requestIdleCallback(afterFirstPaint, { timeout: 1200 });
+  else setTimeout(afterFirstPaint, 150);
 }
 
 /* 启动骨架屏：数据加载完成（或失败，横幅会提示）后淡出移除 */
@@ -1755,7 +1757,7 @@ function removeBootSplash() {
   const sp = document.getElementById('bootSplash');
   if (!sp) return;
   sp.classList.add('done');
-  setTimeout(() => sp.remove(), 350);
+  setTimeout(() => sp.remove(), 150);
 }
 
 document.addEventListener('DOMContentLoaded', () => {

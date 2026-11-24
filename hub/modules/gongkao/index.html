@@ -16,6 +16,8 @@
   <link rel="stylesheet" href="../../vendor/fonts/noto-serif-sc/700.css">
   <link rel="stylesheet" href="style.css?v=20261121h">
   <link rel="stylesheet" href="../../shared/hub-module.css">
+  <!-- 默认考试=国考：提前开始拉主数据文件，别等 DOMContentLoaded 后再排队 -->
+  <link rel="preload" as="fetch" href="data/guokao2027.json.gz" crossorigin="anonymous">
 </head>
 <body>
 <!-- 启动骨架屏：app.js 异步加载数据期间显示，加载完成后由 removeBootSplash() 淡出 -->
@@ -464,7 +466,7 @@
     if (el) el.textContent = `${d.getFullYear()} 年 ${d.getMonth() + 1} 月 ${d.getDate()} 日 · 星期${w} ｜ 金融专业视角 · 五类考试岗位库`;
   })();
 </script>
-<script src="app.js?v=20261121h"></script>
+<script src="app.js?v=20261124a"></script>
 <script src="../../shared/hub-bridge.js"></script>
 </body>
 </html>
