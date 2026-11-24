@@ -14,7 +14,7 @@
   };
   /* 发布版本号：必须与 index.html 里 shell.js/shell.css 的 ?v= 保持一致。
    * 一起 bump 后，新 Service Worker 安装即清旧缓存（见 sw.js）。 */
-  var HUB_BUILD = '20261124a';
+  var HUB_BUILD = '20261124b';
   var frame = null;
   var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
@@ -53,6 +53,7 @@
   /* ---------------- 光标桥状态 / 路由清理 ---------------- */
   var cursorBridge = { active: false, x: 0, y: 0 };
   var cursorEnabled = false;
+  var cursorWake = null;
   var routeCleanups = [];
   function onRouteCleanup(fn) { routeCleanups.push(fn); }
   function flushRouteCleanups() {
@@ -137,13 +138,9 @@
     }
     document.body.appendChild(trail);
     var tx = window.innerWidth / 2, ty = window.innerHeight / 2, rx = tx, ry = ty, angle = 0, lx = tx, ly = ty;
-    window.addEventListener('pointermove', function (e) {
-      cursorBridge.active = false;
-      tx = e.clientX; ty = e.clientY;
-      var dx = tx - lx, dy = ty - ly;
-      if (dx * dx + dy * dy > 4) { angle = Math.atan2(dy, dx) * 180 / Math.PI + 90; lx = tx; ly = ty; }
-    }, { passive: true });
-    (function loop() {
+    /* 光标动画按需运行：鼠标静止 1.2s 或页面隐藏即停，避免常驻 rAF 占 GPU/CPU */
+    var rafId = 0, lastMove = performance.now(), IDLE_MS = 1200;
+    function frame() {
       if (cursorBridge.active) { tx = cursorBridge.x; ty = cursorBridge.y; }
       rx += (tx - rx) * 0.2; ry += (ty - ry) * 0.2;
       ring.style.transform = 'translate(' + rx + 'px,' + ry + 'px) translate(-50%,-50%) rotate(' + angle.toFixed(1) + 'deg)';
@@ -155,8 +152,25 @@
         d.el.style.transform = 'translate(' + d.x + 'px,' + d.y + 'px) translate(-50%,-50%)';
         px = d.x; py = d.y;
       }
-      requestAnimationFrame(loop);
-    })();
+      rafId = (performance.now() - lastMove < IDLE_MS) ? requestAnimationFrame(frame) : 0;
+    }
+    function wake() {
+      lastMove = performance.now();
+      if (!rafId) rafId = requestAnimationFrame(frame);
+    }
+    cursorWake = wake;
+    window.addEventListener('pointermove', function (e) {
+      cursorBridge.active = false;
+      tx = e.clientX; ty = e.clientY;
+      var dx = tx - lx, dy = ty - ly;
+      if (dx * dx + dy * dy > 4) { angle = Math.atan2(dy, dx) * 180 / Math.PI + 90; lx = tx; ly = ty; }
+      wake();
+    }, { passive: true });
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) { if (rafId) { cancelAnimationFrame(rafId); rafId = 0; } }
+      else wake();
+    });
+    wake();
     var hoverSel = 'a, button, input, select, textarea, .q-opt, .chip, .tl-row, .action, .bento-card';
     document.addEventListener('pointerover', function (e) { if (e.target.closest(hoverSel)) ring.classList.add('on'); });
     document.addEventListener('pointerout', function (e) { if (e.target.closest(hoverSel)) ring.classList.remove('on'); });
@@ -1485,6 +1499,7 @@
         cursorBridge.active = true;
         cursorBridge.x = r.left + e.data.x;
         cursorBridge.y = r.top + e.data.y;
+        if (cursorWake) cursorWake();
       } else cursorBridge.active = false;
     } else if (e.data.type === 'hub-theme-changed') {
       setShellTheme(e.data.theme, false);
