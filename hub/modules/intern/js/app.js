@@ -1801,7 +1801,7 @@
   }
   /* 运行时优先加载构建期合并好的 JSON.gz：JSON.parse 比编译 2.9MB JS 快一个数量级。
    Worker 路径保留为降级方案（数据包缺失/解压失败时）。 */
-  var DATA_BUNDLE_V = "20261125";
+  var DATA_BUNDLE_V = "20261127";
   function fetchBundle(name) {
     return fetch("js/" + name + ".json.gz?v=" + DATA_BUNDLE_V, { cache: "default" })
       .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.arrayBuffer(); })

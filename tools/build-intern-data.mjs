@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const JS = path.join(root, 'hub/modules/intern/js');
-const ORDER = ['data.plain.js', 'data-extra.js', 'data-more.js', 'data-more2.js', 'data-more3.js', 'data-more4.js', 'data-links.js', 'data-more5.js', 'data-more6.js'];
+const ORDER = ['data.plain.js', 'data-extra.js', 'data-more.js', 'data-more2.js', 'data-more3.js', 'data-more4.js', 'data-links.js', 'data-more5.js', 'data-more6.js', 'data-more7.js'];
 
 function run(files) {
   const sb = {

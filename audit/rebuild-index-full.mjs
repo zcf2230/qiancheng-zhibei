@@ -27,7 +27,7 @@ const JS = path.join(root, 'hub/modules/intern/js');
 const IDX = path.join(root, 'data-src/shared/search-index.js');
 const WRITE = process.argv.includes('--write');
 
-const ORDER = ['data.plain.js', 'data-extra.js', 'data-more.js', 'data-more2.js', 'data-more3.js', 'data-more4.js', 'data-links.js', 'data-more5.js', 'data-more6.js'];
+const ORDER = ['data.plain.js', 'data-extra.js', 'data-more.js', 'data-more2.js', 'data-more3.js', 'data-more4.js', 'data-links.js', 'data-more5.js', 'data-more6.js', 'data-more7.js'];
 
 function loadCompanies() {
   const sb = {

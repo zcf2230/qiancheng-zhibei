@@ -14,7 +14,7 @@
   };
   /* 发布版本号：必须与 index.html 里 shell.js/shell.css 的 ?v= 保持一致。
    * 一起 bump 后，新 Service Worker 安装即清旧缓存（见 sw.js）。 */
-  var HUB_BUILD = '20261124c';
+  var HUB_BUILD = '20261127a';
   var frame = null;
   var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
@@ -328,7 +328,7 @@
           '<div class="hm-head reveal"><div class="hm-eyebrow">实用功能</div><h2 class="hm-h">为「随手查」<span class="hm-a">而设计</span></h2>' +
           '<p class="hm-sub">在宿舍、在地铁、在宣讲会上，都能快速查到、记住、分享。</p></div>' +
           '<div class="hm-feats">' +
-            '<div class="hm-feat reveal d1"><div class="hm-fic"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></div><h4>全局搜索</h4><p>按 <span class="hm-kbd">⌘K</span> 一个框命中 <span class="hm-kbd">161,965</span> 条院校、岗位与机构索引，回车直达。</p></div>' +
+            '<div class="hm-feat reveal d1"><div class="hm-fic"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></div><h4>全局搜索</h4><p>按 <span class="hm-kbd">⌘K</span> 一个框命中 <span class="hm-kbd">161,971</span> 条院校、岗位与机构索引，回车直达。</p></div>' +
             '<div class="hm-feat reveal d2"><div class="hm-fic"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007 0l3-3a5 5 0 00-7-7l-1 1"/><path d="M14 11a5 5 0 00-7 0l-3 3a5 5 0 007 7l1-1"/></svg></div><h4>筛选即链接</h4><p>整套筛选条件写进 URL，复制即可发给同学，打开就是同一屏。</p></div>' +
             '<div class="hm-feat reveal d3"><div class="hm-fic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg></div><h4>我的三轨看板</h4><p>收藏、投递进度、择校清单聚成一页，可打印存 PDF，本机保存无需账号。</p></div>' +
             '<div class="hm-feat reveal d1"><div class="hm-fic"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></div><h4>字段完整度透明</h4><p>学费 / 拟招 / 复试线覆盖率摊开给你看，缺口一键直达官方简章。</p></div>' +
@@ -344,7 +344,7 @@
           '<p class="hm-sub">每一个数字都标注出处与快照日期。官方优先、不确定就留空、第三方明确标注。</p></div>' +
           '<div class="hm-data reveal d1">' +
             '<div class="hm-dtop">' +
-              '<div><div class="hm-bigidx" data-n="161965">0</div><div class="hm-bigidx-l">条全局搜索索引<br>院校专业 + 考公岗位 + 实习机构</div></div>' +
+              '<div><div class="hm-bigidx" data-n="161971">0</div><div class="hm-bigidx-l">条全局搜索索引<br>院校专业 + 考公岗位 + 实习机构</div></div>' +
               '<div class="hm-cov">' +
                 '<div class="hm-covrow"><div class="hm-covtop"><b>考公竞争度覆盖</b><span>56.8%</span></div><div class="hm-covbar"><i data-w="56.8%"></i></div></div>' +
                 '<div class="hm-covrow"><div class="hm-covtop"><b>考研学费字段（金融试点）</b><span>77%</span></div><div class="hm-covbar"><i data-w="77%"></i></div></div>' +
@@ -959,7 +959,7 @@
     var q0 = decodeURIComponent((query.match(/q=([^&]*)/) || [])[1] || '');
     el.innerHTML =
       '<div class="page-head"><div class="page-kicker">Search</div><h2 class="page-title">全局搜索</h2>' +
-      '<p class="page-sub">一个搜索框同时命中考研院校、考公岗位与实习机构，共 <span id="searchTotal">161,965</span> 条索引；点击结果直达模块并自动定位。</p></div>' +
+      '<p class="page-sub">一个搜索框同时命中考研院校、考公岗位与实习机构，共 <span id="searchTotal">161,971</span> 条索引；点击结果直达模块并自动定位。</p></div>' +
       '<div class="palette"><input id="searchInput" type="search" placeholder="搜院校 / 招录机关 / 职位 / 公司，如：北大 税务局 中信" value="' + esc(q0) + '"><kbd>ESC 清空</kbd></div>' +
       '<div id="searchResults" aria-live="polite"></div>';
     var input = el.querySelector('#searchInput');
@@ -1244,7 +1244,7 @@
       '<div class="db-exams" id="dbExams"><div class="db-placeholder">正在统计…</div></div>' +
       '<p class="db-note">口径：官方优先、查不到留空、第三方标注出处；缺口本身就是信息。考公快照 <b id="dbSnap">—</b>；收藏与进度仅存本机，不上传。</p>' +
       '</div></div>' +
-      '<div class="about-sec reveal"><h3>技术选型</h3><div><p>无框架原生实现：外壳 hash 路由 + iframe 沙箱、构建期生成的统一时间线（40 条）与全局搜索索引（161,965 条，含简称表与子序列匹配）、十题路径决策、三轨规划报告打印、可打印择校报告与 CSV 导出。全站静态资源 + 边缘缓存，打开即用。</p></div></div>' +
+      '<div class="about-sec reveal"><h3>技术选型</h3><div><p>无框架原生实现：外壳 hash 路由 + iframe 沙箱、构建期生成的统一时间线（40 条）与全局搜索索引（161,971 条，含简称表与子序列匹配）、十题路径决策、三轨规划报告打印、可打印择校报告与 CSV 导出。全站静态资源 + 边缘缓存，打开即用。</p></div></div>' +
       '<div class="letter reveal"><p>三岔路没有标准答案，只有看清之后自己选的那条。如果这个站能让你在某个路口少一点迷茫、少踩一个坑、多赶上一次截止日期，它就没有白做。愿你的每一个选择，都通向光明的未来。</p>' +
       '<p class="sig" style="font-size:14px">数据问题、功能建议或任何疑问，随时联系作者：邮箱 <a href="mailto:3426493108@qq.com">3426493108@qq.com</a> · 微信 Zaiayn。</p></div>';
     bindReveal(el);
