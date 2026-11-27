@@ -807,20 +807,37 @@
     if ((c.tags || []).some(function (t) { return want.indexOf(t) >= 0; })) return 2; // 附加归类
     return 1;                                      // 仅学科标签（企业职能岗）
   }
-  function sortCompanies(a, b) {
-    var fa = isFav(a.id), fb = isFav(b.id);
-    if (fa !== fb) return fa ? -1 : 1; // 收藏的永远置顶
-    if (filters.disc.length) {
-      var pa = primaryDiscRank(a), pb = primaryDiscRank(b);
-      if (pa !== pb) return pb - pa;
-      var sa = a.discInferred ? 0 : 1, sb = b.discInferred ? 0 : 1;
-      if (sa !== sb) return sb - sa;
-    }
-    var oa = statusOf(a), ob = statusOf(b);
+  /* 排序键先算一遍再排：避免每次比较都查收藏/状态（3523 家排序曾占降速设备的 0.7s）。
+     Intl.Collator 复用同一个实例，比每次 localeCompare 现造 collator 快很多。 */
+  var ZH_COLLATOR = (typeof Intl !== "undefined" && Intl.Collator) ? new Intl.Collator("zh") : null;
+  function sortCompaniesList(list) {
     var order = { opening: 0, rolling: 1, soon: 2, unknown: 3, closed: 4 };
-    if (order[oa.state] !== order[ob.state]) return order[oa.state] - order[ob.state];
-    if (oa.state === "soon" && ob.state === "soon" && oa.days !== ob.days) return oa.days - ob.days;
-    return a.name.localeCompare(b.name, "zh");
+    var useDisc = filters.disc.length > 0;
+    var deco = new Array(list.length);
+    for (var i = 0; i < list.length; i++) {
+      var c = list[i], st = statusOf(c);
+      deco[i] = {
+        c: c,
+        fav: isFav(c.id) ? 0 : 1,
+        pa: useDisc ? primaryDiscRank(c) : 0,
+        sa: useDisc ? (c.discInferred ? 0 : 1) : 0,
+        o: order[st.state],
+        d: st.days
+      };
+    }
+    deco.sort(function (A, B) {
+      if (A.fav !== B.fav) return A.fav - B.fav;
+      if (useDisc) {
+        if (A.pa !== B.pa) return B.pa - A.pa;
+        if (A.sa !== B.sa) return A.sa - B.sa;
+      }
+      if (A.o !== B.o) return A.o - B.o;
+      if (A.o === 2 && B.o === 2 && A.d !== B.d) return A.d - B.d;
+      return ZH_COLLATOR ? ZH_COLLATOR.compare(A.c.name, B.c.name)
+        : (A.c.name < B.c.name ? -1 : A.c.name > B.c.name ? 1 : 0);
+    });
+    for (var j = 0; j < list.length; j++) list[j] = deco[j].c;
+    return list;
   }
 
   /* ---------- 「来源」标记 ----------
@@ -1076,6 +1093,7 @@
      实习全量 3523 张卡 ≈ 9 万个 DOM 节点，一次性画满会把 WebView 拖到卡死。
      现在首屏只画 60 张，滚动到底部附近再追加下一批，DOM 规模跟着用户行为增长。 */
   var PAGE = 60;
+  var listFillChecked = false;
 
   function ensureListMore(box) {
     var el = document.getElementById("listMore");
@@ -1120,7 +1138,7 @@
       var open = $("#filterPanel") && $("#filterPanel").classList.contains("open");
       ft.textContent = (open ? "收起分类与筛选 ▴" : "展开分类与筛选 ▾") + (n ? "（已选 " + n + " 项）" : "");
     }
-    var list = DATA.companies.filter(function (c) { return matchCompany(c); }).sort(sortCompanies);
+    var list = sortCompaniesList(DATA.companies.filter(function (c) { return matchCompany(c); }));
     var baseTotal = summerOnlyEnabled()
       ? DATA.companies.filter(function (c) { return summerBatches(c).length > 0; }).length
       : DATA.companies.length;
@@ -1218,7 +1236,7 @@
     }
     var html = '<div class="tl-months" style="grid-template-columns:repeat(' + months.length + ',1fr)">' +
       months.map(function (x) { return "<div>" + x + "</div>"; }).join("") + "</div>";
-    html += list.sort(sortCompanies).map(function (c) {
+    html += sortCompaniesList(list).map(function (c) {
       var st = statusOf(c);
       var bars = companyWindows(c).map(function (it) {
         if (it.w.rolling) {
@@ -1509,7 +1527,11 @@
 
   /* ---------- 事件绑定 ---------- */
   function bindEvents() {
-    window.addEventListener("scroll", maybeLoadMore, { passive: true });
+    var moreTick = 0;
+    window.addEventListener("scroll", function () {
+      if (moreTick) return;
+      moreTick = requestAnimationFrame(function () { moreTick = 0; maybeLoadMore(); });
+    }, { passive: true });
     $("#seasonSwitch").onclick = function (e) {
       var b = e.target.closest("button[data-season]");
       if (b && b.dataset.season !== activeSeason) setSeason(b.dataset.season);
@@ -1722,52 +1744,129 @@
     };
     // 供外壳的「搜索直达」与档案预填使用：init 完成后才允许派发筛选事件
     window.__INTERN_READY__ = true;
-    startRestLoad();
   }
 
-  /* ---------- 数据补载：首屏先渲染 data.plain，其余扩展文件空闲时按序加载 ---------- */
-  var restStarted = false, restRefreshTimer = 0;
-  function scheduleRestRefresh() {
-    if (restRefreshTimer) return;
-    restRefreshTimer = setTimeout(function () {
-      restRefreshTimer = 0;
-      renderStatStrip(); updateFacetCounts(); renderList();
-    }, 200);
+  /* ---------- 数据加载：全部数据在 Worker 里解析，两阶段回传 ---------- */
+  var restStarted = false, baseLoaded = false;
+  function requestIdle(fn, timeout) {
+    if (typeof requestIdleCallback === "function") requestIdleCallback(fn, { timeout: timeout || 1200 });
+    else setTimeout(fn, 150);
   }
   function finishRestLoad() {
     window.__INTERN_REST_LOADING__ = false;
-    clearTimeout(restRefreshTimer); restRefreshTimer = 0;
     normalizeCompanies();
     $("#updatedAt").textContent = DATA.updatedAt || "整理中";
-    renderFreshness(); renderStatStrip(); renderCategories(); renderDisciplines(); renderSubDirs();
-    renderAlert(); updateFacetCounts();
-    tabDirty.timeline = tabDirty.progress = tabDirty.channels = tabDirty.guides = true;
-    if (currentTab !== "list") ensureTab(currentTab);
-    renderList();
+    renderList();                                  // 先把完整列表与家数接上
     window.__INTERN_REST_DONE__ = true;
     document.dispatchEvent(new Event("intern-data-rest-loaded"));
+    /* 分类/学科/概览的计数遍历较贵，放空闲帧补，避免补载完成瞬间再卡一下 */
+    requestIdle(function () {
+      renderFreshness(); renderStatStrip(); renderCategories(); renderDisciplines(); renderSubDirs();
+      renderAlert(); updateFacetCounts();
+      tabDirty.timeline = tabDirty.progress = tabDirty.channels = tabDirty.guides = true;
+      if (currentTab !== "list") ensureTab(currentTab);
+      renderList();
+    }, 1500);
   }
-  function startRestLoad() {
-    var files = (window.__INTERN_REST__ || []).slice();
-    if (restStarted || !files.length) return;
-    restStarted = true;
-    window.__INTERN_REST_LOADING__ = true;
+  var restFallbackStarted = false;
+  function startRestFallback(files) {
+    if (restFallbackStarted) return;
+    restFallbackStarted = true;
     var i = 0;
     function step() {
       if (i >= files.length) { finishRestLoad(); return; }
       var s = document.createElement("script");
       s.src = "js/" + files[i++];
       s.async = true;
-      s.onload = function () {
-        normalizeCompanies();
-        if (i < files.length) scheduleRestRefresh();
-        step();
-      };
+      s.onload = function () { normalizeCompanies(); step(); };
       s.onerror = function () { step(); };
       document.body.appendChild(s);
     }
-    if (typeof requestIdleCallback === "function") requestIdleCallback(step, { timeout: 600 });
-    else setTimeout(step, 120);
+    requestIdle(step, 600);
+  }
+  function startAllFallback(all, extras) {
+    var s = document.createElement("script");
+    s.src = "js/data.plain.js";
+    s.async = true;
+    s.onload = function () {
+      if (window.DATA) DATA = window.DATA;
+      if (!baseLoaded) { baseLoaded = true; init(); }
+      startRestFallback(extras);
+    };
+    s.onerror = function () {
+      if (!baseLoaded) { baseLoaded = true; init(); }
+      startRestFallback(extras);
+    };
+    document.body.appendChild(s);
+  }
+  /* 运行时优先加载构建期合并好的 JSON.gz：JSON.parse 比编译 2.9MB JS 快一个数量级。
+   Worker 路径保留为降级方案（数据包缺失/解压失败时）。 */
+  var DATA_BUNDLE_V = "20261125";
+  function fetchBundle(name) {
+    return fetch("js/" + name + ".json.gz?v=" + DATA_BUNDLE_V, { cache: "default" })
+      .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.arrayBuffer(); })
+      .then(function (buf) {
+        var b = new Uint8Array(buf);
+        if (b[0] === 0x1f && b[1] === 0x8b) {
+          if (typeof DecompressionStream === "undefined") throw new Error("no gzip support");
+          return new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream("gzip"))).text();
+        }
+        return new TextDecoder().decode(buf);
+      })
+      .then(function (txt) { return JSON.parse(txt); });
+  }
+  function startDataPipeline() {
+    restStarted = true;
+    window.__INTERN_REST_LOADING__ = true;
+    var hint = document.getElementById("companyList");
+    if (hint && !hint.children.length) hint.innerHTML = '<div class="empty-tip">正在加载机构数据…</div>';
+    fetchBundle("data-base").then(function (obj) {
+      if (!obj || !obj.companies || !obj.companies.length) throw new Error("empty base");
+      window.DATA = obj; DATA = window.DATA; baseLoaded = true; init();
+      return fetchBundle("data-full");
+    }).then(function (obj) {
+      if (!obj || !obj.companies || !obj.companies.length) throw new Error("empty full");
+      window.DATA = obj; DATA = window.DATA;
+      if (!baseLoaded) { baseLoaded = true; init(); }
+      finishRestLoad();
+    }).catch(function () { startWorkerPipeline(); });
+  }
+  function startWorkerPipeline() {
+    var extras = (window.__INTERN_REST__ || []).slice();
+    var all = ["data.plain.js"].concat(extras);
+    function adopt(d) { window.DATA = d; DATA = window.DATA; }
+    if (typeof Worker === "function") {
+      try {
+        var w = new Worker("js/data-worker.js?v=20261125b");
+        var settled = false;
+        w.onmessage = function (ev) {
+          var d = ev.data || {};
+          if (!d.ok) {
+            try { w.terminate(); } catch (e) {}
+            if (!baseLoaded) startAllFallback(all, extras); else startRestFallback(extras);
+            return;
+          }
+          if (d.phase === "base" && d.data) {
+            if (!baseLoaded) { baseLoaded = true; adopt(d.data); init(); }
+            return;
+          }
+          if (d.phase === "full" && d.data) {
+            if (settled) return; settled = true;
+            try { w.terminate(); } catch (e) {}
+            adopt(d.data);
+            if (!baseLoaded) { baseLoaded = true; init(); }
+            finishRestLoad();
+          }
+        };
+        w.onerror = function () {
+          try { w.terminate(); } catch (e) {}
+          if (!baseLoaded) startAllFallback(all, extras); else startRestFallback(extras);
+        };
+        w.postMessage({ base: [], files: all });
+        return;
+      } catch (e) {}
+    }
+    startAllFallback(all, extras);
   }
   document.addEventListener("DOMContentLoaded", boot);
 
@@ -1827,7 +1926,7 @@
     init();
   }
   function boot() {
-    if (!window.ENC_DATA) { init(); return; } // 兼容无加密数据的情况
+    if (!window.ENC_DATA) { startDataPipeline(); return; } // 网页版：数据由 Worker 解析后回传
     // 会话内已解锁：静默解密
     var cached = sessionStorage.getItem(KEY_CACHE);
     if (cached) {

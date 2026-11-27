@@ -49,14 +49,14 @@ try {
   const html = await (await fetch('http://127.0.0.1:8123/modules/intern/')).text();
   const ids = ['companyList', 'statStrip', 'searchBox', 'discPanel', 'disciplineFilters', 'subFilters', 'categoryFilters'];
   const missing = ids.filter(id => !html.includes('id="' + id + '"'));
-  const order = ['data.plain.js', 'app.js'].map(f => html.indexOf(f));
-  const ordered = order.every((v, i) => v >= 0 && (i === 0 || v > order[i - 1]));
-  /* 实习改为渐进加载：首屏只静态引 data.plain + app，其余经 __INTERN_REST__ 空闲补载 */
+  /* 实习：主线程不再静态解析数据脚本，全部交给 Worker 两阶段回传 */
+  const appIdx = html.indexOf('app.js');
+  const ordered = appIdx >= 0 && html.indexOf('<script src="js/data.plain.js"') < 0;
   const restOk = html.includes('__INTERN_REST__') && html.includes('data-more6.js');
-  console.log(`渲染容器缺失: ${missing.length ? missing.join(',') : '无'}；首屏 data.plain→app ${ordered ? '正确' : '异常'}；扩展队列含 more6 ${restOk ? '是' : '否'}`);
+  console.log(`渲染容器缺失: ${missing.length ? missing.join(',') : '无'}；数据脚本不在主线程 ${ordered ? '是' : '否'}；扩展队列 ${restOk ? '是' : '否'}`);
   if (missing.length || !ordered || !restOk) fail++;
   const scripts = (html.match(/<script src="js\//g) || []).length;
-  console.log(`模块页静态加载 ${scripts} 个 js，其余扩展数据由 __INTERN_REST__ 补载`);
+  console.log(`模块页静态加载 ${scripts} 个 js（运行时优先 fetch data-base/full.json.gz，Worker 兜底）`);
 } catch (e) {
   console.log('页面检查失败: ' + e.message);
   fail++;

@@ -1,0 +1,38 @@
+name: 实习官网链接巡检
+
+# 静态站没有服务端，巡检由 GitHub Actions 每天跑一次：
+# 生成 hub/modules/intern/js/link-status.json 并直接提交，Pages/Sites 重新部署后前台即生效。
+on:
+  schedule:
+    - cron: "20 20 * * *"   # UTC 20:20 = 北京时间 04:20
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: intern-link-check
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: 巡检 687 条官网链接
+        run: node tools/ci-check-links.js
+      - name: 有变化才提交
+        run: |
+          if git diff --quiet -- hub/modules/intern/js/link-status.json; then
+            echo "巡检结果无变化"
+            exit 0
+          fi
+          git config user.name "link-check-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add hub/modules/intern/js/link-status.json
+          git commit -m "chore: 实习官网链接巡检 $(date -u +%F)"
+          git push

@@ -201,17 +201,16 @@ try {
   <div class="modal-body" id="modalBody"></div>
 </div>
 
-<script src="js/data.plain.js"></script>
 <script>
-/* 首屏只用基础数据（1064 家）先出结果；其余 8 个扩展文件在空闲时按序动态补载，
- * 补一批合并一批，避免 2.9MB 脚本串行解析把首帧卡住。 */
+/* 基础数据也交给 Worker 解析：主线程不再编译约 1MB 的 data.plain.js。
+ * 首屏只用基础数据（1064 家）先出结果；其余扩展文件在 Worker 里继续合并后回传。 */
 window.__INTERN_REST__ = [
   "data-extra.js", "data-more.js", "data-more2.js", "data-more3.js",
   "data-more4.js", "data-links.js?v=20261110", "data-more5.js?v=20261111",
   "data-more6.js?v=20261111"
 ];
 </script>
-<script src="js/app.js?v=33"></script>
+<script src="js/app.js?v=36"></script>
 <script src="../../shared/hub-bridge.js"></script>
 </body>
 </html>
