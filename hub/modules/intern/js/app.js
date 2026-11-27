@@ -1021,7 +1021,7 @@
     // 同一条官网连续 3 天连不上才提示，避免把「对方限制了程序访问」误报成失效。
     var ls = LINK_STATUS && LINK_STATUS.entries ? LINK_STATUS.entries[c.id] : null;
     var deadTag = (ls && ls.s === "bad")
-      ? '<span class="tag dead" title="自动巡检已连续 ' + ls.f + ' 天连不上该官网（首次发现 ' + esc(ls.first) +
+      ? '<span class="tag dead" title="自动巡检已连续 ' + (Number(ls.f) || 0) + ' 天连不上该官网（首次发现 ' + esc(ls.first) +
         '）。可能已失效，也可能只是对方限制了程序访问——点「搜官方入口」能立刻交叉核对。">⚠️ 链接可能失效</span>'
       : "";
     var extra = sbLine(c);
@@ -1328,21 +1328,51 @@
   }
 
   /* ---------- 官网链接巡检结果 ----------
-     js/link-status.json 由 tools/ci-check-links.js 每日生成（GitHub Actions），只含公司 id、
+     link-status.json 由 tools/ci-check-links.js 每日生成（GitHub Actions），只含公司 id、
      连续失败天数和日期——没有公司名、没有 URL，所以能放进公开仓库。
-     文件不存在（首次部署/离线）时一切都照旧，巡检只是锦上添花。 */
+     读取顺序：本地缓存 → 站点内置文件 → GitHub raw（最新）→ jsDelivr（国内可达备线）。
+     远端只接受 checkedAt 更新的结果，失败就保留已有状态；这样 Action 每天更新后
+     线上无需重新发布也能看到最新巡检日期。 */
   var LINK_STATUS = null;
+  var LINK_CACHE_KEY = "intern_link_status_v2";
+  var LINK_REMOTES = [
+    "https://raw.githubusercontent.com/zcf2230/qiancheng-zhibei/main/hub/modules/intern/js/link-status.json",
+    "https://cdn.jsdelivr.net/gh/zcf2230/qiancheng-zhibei@main/hub/modules/intern/js/link-status.json"
+  ];
+  function applyLinkStatus(j) {
+    if (!j || typeof j.entries !== "object" || !j.checkedAt) return false;
+    var t = Date.parse(j.checkedAt) || 0;
+    var cur = LINK_STATUS ? (Date.parse(LINK_STATUS.checkedAt) || 0) : 0;
+    if (t < cur) return false;                 // 不接受更旧的结果
+    LINK_STATUS = j;
+    try { localStorage.setItem(LINK_CACHE_KEY, JSON.stringify({ j: j, ts: Date.now() })); } catch (e) {}
+    invalidateTab("list");                     // 给命中的卡片补标记
+    renderStatStrip();                         // 概览条补上「上次巡检」
+    return true;
+  }
+  function getJson(url, ms) {
+    return new Promise(function (resolve, reject) {
+      var ctrl = typeof AbortController === "function" ? new AbortController() : null;
+      var timer = setTimeout(function () { if (ctrl) ctrl.abort(); reject(new Error("timeout")); }, ms);
+      fetch(url, { cache: "no-store", signal: ctrl ? ctrl.signal : undefined })
+        .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+        .then(function (j) { clearTimeout(timer); resolve(j); })
+        .catch(function (e) { clearTimeout(timer); reject(e); });
+    });
+  }
   function loadLinkStatus() {
     if (typeof fetch !== "function") return;
-    fetch("js/link-status.json", { cache: "no-store" })
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (j) {
-        if (!j || !j.entries) return;
-        LINK_STATUS = j;
-        invalidateTab("list");   // 给命中的卡片补标记
-        renderStatStrip();       // 概览条补上「上次巡检」
-      })
-      .catch(function () {});
+    try {
+      var cached = JSON.parse(localStorage.getItem(LINK_CACHE_KEY) || "null");
+      if (cached && cached.j) applyLinkStatus(cached.j);
+    } catch (e) {}
+    getJson("js/link-status.json", 5000).then(applyLinkStatus).catch(function () {});
+    (function next(i) {
+      if (i >= LINK_REMOTES.length) return;
+      getJson(LINK_REMOTES[i] + "?t=" + Date.now(), 5000)
+        .then(function (j) { if (!applyLinkStatus(j)) next(i + 1); })
+        .catch(function () { next(i + 1); });
+    })(0);
   }
 
   /* ---------- 报头：数据概览条 + 新鲜度 ----------
